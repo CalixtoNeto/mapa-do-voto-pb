@@ -6,6 +6,8 @@ Votos de candidatos a deputado federal e estadual em cada um dos 223 municípios
 
 ## Como usar
 
+![Carregando os dados do TSE, buscando um candidato e vendo os votos por escola em Bayeux](docs/uso.gif)
+
 1. Baixe `votacao_candidato_munzona_ANO.zip` no Portal de Dados Abertos do TSE.
 2. Abra o site e envie o .zip (ou só o CSV da PB). A leitura acontece no navegador.
 3. Escolha o cargo e o candidato.
