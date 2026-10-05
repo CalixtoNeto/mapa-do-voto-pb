@@ -158,17 +158,21 @@ if (modo === 'historico') {
     await gerarCiclo(ano, dir);
   }
 } else if (modo === 'atual') {
+  await atual();
+} else {
+  console.error('Uso: node scripts/gerar-dados.mjs historico [ano ...] [--forcar]  |  node scripts/gerar-dados.mjs atual');
+  process.exitCode = 1;
+}
+
+async function atual() {
   const dir = 'public/data/atual';
   const cfg = await getJson(`${API}/comum/config/ele-c.json`);
   const ciclo = [...new Set((cfg?.pl || []).map(p => p.c))].sort().pop()?.replace('ele', '');
-  if (!ciclo) { console.warn('Não foi possível descobrir o ciclo atual; mantendo os dados em cache.'); process.exit(0); }
-  if (existsSync(`public/data/historico/${ciclo}-t1.json`)) { console.log(`Ciclo ${ciclo} já está no histórico; nada a fazer.`); process.exit(0); }
+  if (!ciclo) return console.warn('Não foi possível descobrir o ciclo atual; mantendo os dados em cache.');
+  if (existsSync(`public/data/historico/${ciclo}-t1.json`)) return console.log(`Ciclo ${ciclo} já está no histórico; nada a fazer.`);
   // dados já finais (cache do workflow) não precisam ser buscados de novo
   const idx = existsSync(`${dir}/index.json`) ? JSON.parse(await readFile(`${dir}/index.json`, 'utf8')) : null;
-  const completo = idx?.eleicoes?.some(e => e.ano === ciclo && e.final) && idx.eleicoes.filter(e => e.ano === ciclo).every(e => e.final && e.locais);
-  if (completo) { console.log(`Ciclo ${ciclo}: dados finais já em cache.`); process.exit(0); }
-  if (!await gerarCiclo(ciclo, dir)) process.exitCode = 0;
-} else {
-  console.error('Uso: node scripts/gerar-dados.mjs historico [ano ...] [--forcar]  |  node scripts/gerar-dados.mjs atual');
-  process.exit(1);
+  const doCiclo = idx?.eleicoes?.filter(e => e.ano === ciclo) || [];
+  if (doCiclo.length && doCiclo.every(e => e.final && e.locais)) return console.log(`Ciclo ${ciclo}: dados finais já em cache.`);
+  await gerarCiclo(ciclo, dir);
 }
