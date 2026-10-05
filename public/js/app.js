@@ -1,7 +1,8 @@
 // Interface: Preact + htm, mapa em Canvas 2D.
 // startApp é chamado por main.js depois que a malha e a tabela TSE→IBGE são carregadas.
-function startApp(TOPO, TSE2IBGE) {
+function startApp(TOPO) {
 const { html, render, useState, useEffect, useMemo, useRef } = htmPreact;
+const NORM = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const UF = 'PB', UF_NOME = 'Paraíba', N_MUN = 223;
 
 // ---------- Geometria (malha IBGE simplificada) ----------
@@ -31,9 +32,6 @@ const MUNIS = FC.features.map(f => {
 }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
 const BYID = Object.fromEntries(MUNIS.map(m => [m.id, m]));
 const BB = MUNIS.reduce((b, m) => [Math.min(b[0], m.bb[0]), Math.min(b[1], m.bb[1]), Math.max(b[2], m.bb[2]), Math.max(b[3], m.bb[3])], [Infinity, Infinity, -Infinity, -Infinity]);
-const BYNAME = Object.fromEntries(MUNIS.map(m => [NORM(m.name), m.id]));
-Object.assign(BYNAME, { 'SANTAREM': '2513653', 'SERIDO': '2515401', 'CAMPO DE SANTANA': '2516409', 'SAO DOMINGOS DE POMBAL': BYNAME['SAO DOMINGOS'] });
-const resolveMun = (cd, nm) => TSE2IBGE[String(parseInt(cd, 10))] || BYNAME[NORM(nm)] || null;
 const HIT = document.createElement('canvas').getContext('2d');
 function hitTest(bx, by) {
   for (const m of MUNIS) {
@@ -57,14 +55,7 @@ const sitLabel = s => (!s || /^#/.test(s)) ? '' : sentence(s).replace(/ qp$/i, '
 const CARGO_ORDER = { '6': 0, '7': 1, '8': 2, '5': 3, '3': 4, '1': 5, '11': 6, '13': 7 };
 
 // ---------- Armazenamento local ----------
-const idb = {
-  open() { return new Promise((res, rej) => { const r = indexedDB.open('mapa-do-voto', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }); },
-  async get(k) { try { const db = await this.open(); return await new Promise(res => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => res(undefined); }); } catch (e) { return undefined; } },
-  async set(k, v) { try { const db = await this.open(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = res; }); } catch (e) { } },
-  async del(k) { try { const db = await this.open(); await new Promise(res => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').delete(k); t.oncomplete = res; t.onerror = res; }); } catch (e) { } },
-};
 const ls = { get(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } } };
-const cap = async name => { try { return (window.claude && window.claude.use) ? await window.claude.use(name) : null; } catch (e) { return null; } };
 
 // ---------- Visão de um candidato ----------
 function buildView(ds, cand) {
@@ -233,28 +224,13 @@ function Legend({ classes, metric, setMetric, view }) {
   </div>`;
 }
 
-// Complemento opcional: arquivo de votação por seção, que traz os votos de cada local de votação
-function SecaoBox({ ano, busy, progress, error, onFile }) {
-  const inp = useRef();
-  const url = `https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_${ano}_${UF}.zip`;
-  return html`<div class="secao-box">
-    <p>Para ver os votos por escola (local de votação) em cada município, baixe também o arquivo de votação por seção de ${ano} e envie aqui.</p>
-    <div class="row">
-      <a class="btn ghost" href=${url} target="_blank" rel="noopener">Baixar do TSE</a>
-      ${busy ? html`<div class="progress" role="progressbar" aria-valuenow=${Math.round(progress * 100)} aria-valuemin="0" aria-valuemax="100"><i style=${`width:${(progress * 100).toFixed(1)}%`}></i><span>Lendo… ${Math.round(progress * 100)}%</span></div>`
-        : html`<button type="button" class="btn" onClick=${() => inp.current && inp.current.click()}>Enviar arquivo</button>`}
-    </div>
-    ${error && html`<p class="error" role="alert">${error}</p>`}
-    <input ref=${inp} type="file" accept=".zip,.csv,text/csv,application/zip" hidden onChange=${e => { const f = e.target.files[0]; e.target.value = ''; f && onFile(f); }} />
-  </div>`;
-}
-
-function MuniCard({ view, id, pinned, onClear, sec }) {
+// Votos por local de votação: o arquivo da eleição (ANO-tTURNO-locais.json) é baixado ao clicar num município
+function MuniCard({ view, id, pinned, onClear, det }) {
   if (!view || !id) return html`<p class="hint">${view ? 'Toque ou clique num município para ver os números.' : ''}</p>`;
   const m = BYID[id]; const v = view.votos[id] || 0, t = view.tot[id] || 0, r = view.rank && view.rank[id];
-  const det = sec.data[view.ano];
-  const locs = det && det.locais[id];
-  const votos = (det && det.votos[[view.ano, view.turno, view.cargo, view.nr].join('|')] || {})[id] || {};
+  const dados = det && det.dados;
+  const locs = dados && dados.locais[id];
+  const votos = (dados && dados.votos[view.cargo + '|' + view.nr] || {})[id] || {};
   const rows = locs ? locs.map((l, i) => ({ n: l.n, v: votos[i] || 0 })).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, 'pt-BR')) : [];
   const max = Math.max(1, ...rows.map(x => x.v));
   return html`<div class=${'muni' + (pinned ? ' pinned' : '')} aria-live="polite">
@@ -264,13 +240,14 @@ function MuniCard({ view, id, pinned, onClear, sec }) {
       <div><dt>Dos votos nominais do cargo</dt><dd>${t ? pct(v / t) : '—'}</dd></div>
       <div><dt>Posição no município</dt><dd>${r ? `${r}º` : '—'}</dd></div>
     </dl>
-    ${det ? (rows.length ? html`<h4 class="locais-h">Votos por local de votação</h4>
+    ${det && det.estado === 'carregando' && html`<p class="hint">Carregando os locais de votação…</p>`}
+    ${det && det.estado === 'ok' && (rows.length ? html`<h4 class="locais-h">Votos por local de votação</h4>
         <ul class="locais" aria-label="Votos por local de votação">
           ${rows.map(x => html`<li><span class="ln">${localNome(x.n)}</span><span class="lv">${nf.format(x.v)}</span>
             <span class="bar" aria-hidden="true"><i style=${`width:${(x.v / max * 100).toFixed(1)}%`}></i></span></li>`)}
         </ul>`
-      : html`<p class="hint">Este município não aparece no arquivo de votação por seção carregado.</p>`)
-    : (pinned && html`<${SecaoBox} ano=${view.ano} busy=${sec.busy} progress=${sec.progress} error=${sec.error} onFile=${sec.onFile} />`)}
+      : html`<p class="hint">Sem detalhe por local de votação para este candidato neste município.</p>`)}
+    ${det && det.estado === 'indisponivel' && pinned && html`<p class="hint">O detalhe por local de votação não está disponível para esta eleição.</p>`}
   </div>`;
 }
 
@@ -345,159 +322,111 @@ function Stats({ view }) {
   </dl>`;
 }
 
-function Source({ ds, busy, progress, error, onFile, onClear, compact }) {
-  const [ano, setAno] = useState('2022'); const [drag, setDrag] = useState(false); const inp = useRef();
-  const url = `https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_candidato_munzona/votacao_candidato_munzona_${ano}.zip`;
-  const pick = () => inp.current && inp.current.click();
-  const input = html`<input ref=${inp} type="file" accept=".zip,.csv,text/csv,application/zip" hidden onChange=${e => { const f = e.target.files[0]; e.target.value = ''; f && onFile(f); }} />`;
-  if (compact && ds && !busy) return html`<section class="source compact">
-    <p>Dados: <strong>${ds.fileName}</strong> · ${nf.format(ds.rows)} linhas da ${UF}</p>
-    <div class="row"><button type="button" class="btn ghost" onClick=${pick}>Trocar arquivo</button><button type="button" class="link" onClick=${onClear}>Remover dados deste aparelho</button></div>
-    ${input}
-  </section>`;
-  return html`<section class=${'source' + (drag ? ' drag' : '')}
-      onDragOver=${e => { e.preventDefault(); setDrag(true); }} onDragLeave=${() => setDrag(false)}
-      onDrop=${e => { e.preventDefault(); setDrag(false); const f = e.dataTransfer.files[0]; f && onFile(f); }}>
-    <h2>Carregue os resultados oficiais do TSE</h2>
-    <ol class="steps">
-      <li>Escolha a eleição e baixe o arquivo de votação nominal por município e zona:
-        <span class="row">
-          <select aria-label="Ano da eleição" value=${ano} onChange=${e => setAno(e.target.value)}>
-            ${['2026', '2022', '2018'].map(a => html`<option value=${a}>${a}</option>`)}
-          </select>
-          <a class="btn ghost" href=${url} target="_blank" rel="noopener">Baixar do TSE</a>
-        </span>
-        <small>Arquivos de ${ano === '2026' ? '2026 saem no Portal de Dados Abertos após a totalização' : ano + ' ficam no Portal de Dados Abertos'}. <a href="https://dadosabertos.tse.jus.br/" target="_blank" rel="noopener">Abrir o portal</a></small>
-      </li>
-      <li>Envie o .zip inteiro ou só o CSV da ${UF}. A leitura acontece no seu aparelho.</li>
-    </ol>
-    ${busy ? html`<div class="progress" role="progressbar" aria-valuenow=${Math.round(progress * 100)} aria-valuemin="0" aria-valuemax="100">
-        <i style=${`width:${(progress * 100).toFixed(1)}%`}></i><span>Lendo arquivo… ${Math.round(progress * 100)}%</span></div>`
-      : html`<button type="button" class="btn" onClick=${pick}>Escolher arquivo</button>`}
-    ${error && html`<p class="error" role="alert">${error}</p>`}
-    ${input}
+function Fonte({ item }) {
+  if (!item) return null;
+  const quando = item.atualizadoEm && item.fonte === 'api' ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  return html`<section class="source compact">
+    <p>${item.fonte === 'api'
+      ? html`<strong>API de resultados do TSE</strong> · ${item.final ? 'apuração concluída' : 'apuração em andamento'}${quando ? ` · atualizado em ${quando}` : ''}`
+      : html`<strong>Dados Abertos do TSE</strong> · votação nominal por município e zona · resultado final`}</p>
   </section>`;
 }
 
-function Saved({ maps, current, onOpen, canEdit, onDelete }) {
-  const [arm, setArm] = useState(null);
-  if (!maps.length) return null;
-  return html`<section class="saved" aria-labelledby="sv">
-    <h2 id="sv">Mapas salvos neste link</h2>
-    <ul>${maps.map(m => html`<li key=${m.id} class=${current === m.id ? 'on' : ''}>
-      <button type="button" onClick=${() => onOpen(m)}><span class="n">${titleCase(m.urna)}</span><span class="meta">${cargoLabel(m.cargoNome)} · ${m.ano} · ${nf.format(m.total)} votos</span></button>
-      ${canEdit && html`<button type="button" class="link" aria-label=${(arm === m.id ? 'Confirmar: apagar mapa de ' : 'Apagar mapa de ') + titleCase(m.urna)} onClick=${() => { if (arm === m.id) { setArm(null); onDelete(m); } else setArm(m.id); }}>${arm === m.id ? 'Confirmar' : 'Apagar'}</button>`}
-    </li>`)}</ul>
-  </section>`;
-}
+const rotuloEleicao = e => `${e.ano} · ${e.turno}º turno${e.final ? '' : ' (parcial)'}`;
 
 // ---------- App ----------
 function App() {
-  const [ds, setDs] = useState(null);
-  const [busy, setBusy] = useState(false), [progress, setProgress] = useState(0), [error, setError] = useState('');
+  const [indice, setIndice] = useState(null), [erro, setErro] = useState('');
   const [eleicao, setEleicao] = useState(null), [cargo, setCargo] = useState(null), [candKey, setCandKey] = useState(null);
-  const [snap, setSnap] = useState(null);
+  const [ds, setDs] = useState(null), [carregando, setCarregando] = useState(false);
+  const [locais, setLocais] = useState({});
   const [metric, setMetric] = useState(ls.get('mv.metric') || 'votos');
   const [selected, setSelected] = useState(null), [hover, setHover] = useState(null);
-  const [db, setDb] = useState(null), [canEdit, setCanEdit] = useState(false), [maps, setMaps] = useState([]), [saveState, setSaveState] = useState('');
   const mapRef = useRef();
-  // votos por local de votação (arquivo votacao_secao), um por ano
-  const [secData, setSecData] = useState({}), [secBusy, setSecBusy] = useState(false), [secProgress, setSecProgress] = useState(0), [secError, setSecError] = useState('');
-  useEffect(() => {
-    (async () => { const got = {}; for (const a of ['2026', '2024', '2022', '2020', '2018']) { const d = await idb.get('sec-' + a); if (d && d.votos) got[a] = d; } setSecData(got); })();
-  }, []);
-  async function onSecaoFile(f) {
-    setSecBusy(true); setSecError(''); setSecProgress(0);
-    try {
-      const d = await parseSecao(f, UF, resolveMun, setSecProgress);
-      setSecData(prev => ({ ...prev, [d.ano]: d })); idb.set('sec-' + d.ano, d);
-      if (view && d.ano !== view.ano) setSecError(`Esse arquivo é de ${d.ano}, e o mapa mostra ${view.ano}. Ele foi guardado e aparece quando você abrir uma eleição de ${d.ano}.`);
-    } catch (e) { setSecError(e.message || 'Não foi possível ler o arquivo.'); }
-    setSecBusy(false);
-  }
 
-  useEffect(() => { idb.get('ds').then(d => { if (d && d.cands) setDs(d); }); }, []);
+  // lista as eleições sozinho: histórico (commitado) + ciclo atual (gerado pelo workflow, se existir)
   useEffect(() => {
-    let unsub = null, alive = true;
     (async () => {
-      const d = await cap('db'); if (!alive || !d) return; setDb(d);
-      const u = await cap('user'); if (u) { try { setCanEdit(await u.canEdit()); } catch (e) { } }
-      try { unsub = d.collection('mapas').orderBy('savedAt', 'desc').limit(100).onSnapshot(s => setMaps(s.docs.map(x => ({ id: x.id, ...x.data() }))), () => { }); } catch (e) { }
+      const ler = async base => {
+        try {
+          const r = await fetch(base + '/index.json', { cache: 'no-cache' });
+          if (!r.ok) return [];
+          return ((await r.json()).eleicoes || []).map(e => ({ ...e, base, id: e.ano + '|' + e.turno }));
+        } catch (e) { return []; }
+      };
+      const [hist, atual] = await Promise.all([ler('data/historico'), ler('data/atual')]);
+      const m = new Map(); for (const e of [...hist, ...atual]) m.set(e.id, e);   // o ciclo atual prevalece
+      const lista = [...m.values()].sort((x, y) => (y.ano - x.ano) || (x.turno - y.turno));
+      if (!lista.length) { setErro('Nenhuma eleição disponível ainda.'); return; }
+      setIndice(lista);
+      const last = ls.get('mv.last');
+      setEleicao(last && lista.some(e => e.id === last.e) ? last.e : lista[0].id);
     })();
-    return () => { alive = false; unsub && unsub(); };
   }, []);
 
-  const eleicoes = useMemo(() => ds ? [...new Set(ds.cands.map(c => c.ano + '|' + c.turno))].sort().reverse() : [], [ds]);
+  const item = indice && indice.find(e => e.id === eleicao);
   useEffect(() => {
-    if (!ds) return;
-    const last = ls.get('mv.last');
-    const e = (last && eleicoes.includes(last.e)) ? last.e : eleicoes[0];
-    setEleicao(e);
-  }, [ds]);
+    if (!item) return;
+    let vivo = true; setCarregando(true); setDs(null); setErro('');
+    fetch(`${item.base}/${item.arquivo}`, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(d => { if (vivo) { setDs(d); setCarregando(false); } })
+      .catch(() => { if (vivo) { setErro('Não foi possível carregar os dados desta eleição.'); setCarregando(false); } });
+    return () => { vivo = false; };
+  }, [item && item.base + item.arquivo]);
+
+  const shown = hover || selected;
+  // votos por local de votação: baixados só ao tocar num município
+  useEffect(() => {
+    if (!shown || !item || !item.locais || locais[item.id]) return;
+    const id = item.id; setLocais(p => ({ ...p, [id]: { estado: 'carregando' } }));
+    fetch(`${item.base}/${item.locais}`, { cache: 'no-cache' }).then(r => { if (!r.ok) throw new Error(); return r.json(); })
+      .then(d => setLocais(p => ({ ...p, [id]: { estado: 'ok', dados: d } })))
+      .catch(() => setLocais(p => ({ ...p, [id]: { estado: 'indisponivel' } })));
+  }, [!!shown, item && item.id]);
+  const det = !item ? null : (item.locais ? (locais[item.id] || null) : { estado: 'indisponivel' });
+
   const cargos = useMemo(() => {
-    if (!ds || !eleicao) return [];
-    const m = new Map(); ds.cands.forEach(c => { if (c.ano + '|' + c.turno === eleicao) m.set(c.cargo, c.cargoNome); });
+    if (!ds) return [];
+    const m = new Map(); ds.cands.forEach(c => m.set(c.cargo, c.cargoNome));
     return [...m].sort((a, b) => (CARGO_ORDER[a[0]] ?? 99) - (CARGO_ORDER[b[0]] ?? 99));
-  }, [ds, eleicao]);
+  }, [ds]);
   useEffect(() => {
     if (!cargos.length) return;
     const last = ls.get('mv.last');
     setCargo(c => cargos.some(x => x[0] === c) ? c : (last && cargos.some(x => x[0] === last.c) ? last.c : cargos[0][0]));
   }, [cargos]);
-  const cands = useMemo(() => ds && eleicao && cargo ? ds.cands.filter(c => c.ano + '|' + c.turno === eleicao && c.cargo === cargo).sort((a, b) => b.total - a.total) : [], [ds, eleicao, cargo]);
+  const cands = useMemo(() => ds && cargo ? ds.cands.filter(c => c.cargo === cargo).sort((a, b) => b.total - a.total) : [], [ds, cargo]);
   useEffect(() => {
     if (!cands.length) return;
     const last = ls.get('mv.last');
     setCandKey(k => cands.some(c => c.key === k) ? k : (last && last.k && cands.some(c => c.key === last.k) ? last.k : null));
   }, [cands]);
-
   const view = useMemo(() => {
-    if (snap) return snap;
     const c = ds && cands.find(x => x.key === candKey);
     return c ? buildView(ds, c) : null;
-  }, [ds, cands, candKey, snap]);
-  useEffect(() => { if (!ds && !snap && maps.length) setSnap(maps[0]); }, [maps.length, ds]);
+  }, [ds, cands, candKey]);
   useEffect(() => { ls.set('mv.metric', metric); }, [metric]);
   useEffect(() => { if (eleicao && cargo) ls.set('mv.last', { e: eleicao, c: cargo, k: candKey }); }, [eleicao, cargo, candKey]);
-  useEffect(() => setSaveState(''), [view && view.id]);
 
   const classes = useMemo(() => view ? quantBreaks(MUNIS.map(m => metricOf(view, m.id, metric))) : null, [view, metric]);
-
-  async function onFile(f) {
-    setBusy(true); setError(''); setProgress(0);
-    try {
-      const d = await parseTSE(f, UF, resolveMun, setProgress);
-      if (!d.cands.length) throw new Error(`O arquivo não tem votos da ${UF_NOME}.`);
-      setDs(d); setSnap(null); idb.set('ds', d);
-    } catch (e) { setError(e.message || 'Não foi possível ler o arquivo.'); }
-    setBusy(false);
-  }
-  async function save() {
-    if (!db || !view) return; setSaveState('saving');
-    const doc = { ano: view.ano, turno: view.turno, cargo: view.cargo, cargoNome: view.cargoNome, nr: view.nr, urna: view.urna, nome: view.nome || '', partido: view.partido,
-      sit: view.sit || '', total: view.total, posicao: view.posicao, nCands: view.nCands, votos: view.votos, tot: view.tot, rank: view.rank || {}, savedAt: Date.now() };
-    try { await db.collection('mapas').doc(view.id).set(doc); setSaveState('saved'); } catch (e) { setSaveState('error'); }
-  }
   const selectFromList = id => { setSelected(id); if (window.innerWidth < 960 && mapRef.current) mapRef.current.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); };
-  const shown = hover || selected;
   const hasData = !!ds;
-
   const sitTxt = view && sitLabel(view.sit);
-  return html`<div class=${'app' + (hasData || view ? '' : ' nodata')}>
+
+  return html`<div class=${'app' + (hasData ? '' : ' nodata')}>
     <header class="top">
       <p class="brand">Mapa do voto <span>${UF_NOME}</span></p>
-      ${snap && hasData && html`<button type="button" class="link" onClick=${() => setSnap(null)}>Voltar ao arquivo carregado</button>`}
     </header>
 
-    ${hasData && html`<section class="filters" aria-label="Filtros">
-      ${eleicoes.length > 1 && html`<label class="field">Eleição
-        <select value=${eleicao} onChange=${e => { setEleicao(e.target.value); setSnap(null); }}>
-          ${eleicoes.map(e => { const [a, t] = e.split('|'); return html`<option value=${e}>${a} · ${t}º turno</option>`; })}
-        </select></label>`}
-      <div class="chips" role="radiogroup" aria-label="Cargo">
-        ${cargos.map(([cd, nm]) => html`<button type="button" role="radio" aria-checked=${cd === cargo} onClick=${() => { setCargo(cd); setSnap(null); }}>${cargoLabel(nm)}</button>`)}
+    ${indice && html`<section class="filters" aria-label="Filtros">
+      <label class="field">Eleição
+        <select value=${eleicao} onChange=${e => { setEleicao(e.target.value); setSelected(null); setCandKey(null); }}>
+          ${indice.map(e => html`<option value=${e.id}>${rotuloEleicao(e)}</option>`)}
+        </select></label>
+      ${hasData && html`<div class="chips" role="radiogroup" aria-label="Cargo">
+        ${cargos.map(([cd, nm]) => html`<button type="button" role="radio" aria-checked=${cd === cargo} onClick=${() => { setCargo(cd); setSelected(null); }}>${cargoLabel(nm)}</button>`)}
       </div>
-      <${CandidatePicker} cands=${cands} value=${snap ? null : candKey} onPick=${k => { setCandKey(k); setSnap(null); setSelected(null); }} />
+      <${CandidatePicker} cands=${cands} value=${candKey} onPick=${k => { setCandKey(k); setSelected(null); }} />`}
     </section>`}
 
     <section class="stage" ref=${mapRef}>
@@ -507,25 +436,17 @@ function App() {
           <p class="sub">${view.posicao ? `${view.posicao}º mais votado entre ${view.nCands}` : ''}${sitTxt ? ` · ${sitTxt}` : ''}</p>
         </div>`
       : html`<div class="who empty"><h1>${hasData ? 'Escolha um candidato' : 'Votos por município'}</h1>
-          <p>${hasData ? 'Busque pelo nome de urna, número ou partido.' : `Veja onde cada candidato a deputado foi votado nos ${N_MUN} municípios da ${UF_NOME}.`}</p></div>`}
+          <p>${erro ? erro : carregando || !indice ? 'Carregando os resultados…' : hasData ? 'Busque pelo nome de urna, número ou partido.' : `Veja onde cada candidato foi votado nos ${N_MUN} municípios da ${UF_NOME}.`}</p></div>`}
       <${MapCanvas} view=${view} metric=${metric} selected=${selected} onSelect=${setSelected} hover=${hover} onHover=${setHover} classes=${classes} />
       ${view && html`<${Legend} classes=${classes} metric=${metric} setMetric=${setMetric} view=${view} />`}
-      <${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)}
-        sec=${{ data: secData, busy: secBusy, progress: secProgress, error: secError, onFile: onSecaoFile }} />
-      ${view && db && canEdit && !snap && html`<div class="share">
-        <button type="button" class="btn ghost" disabled=${saveState === 'saving'} onClick=${save}>${saveState === 'saved' ? 'Salvo no link' : saveState === 'saving' ? 'Salvando…' : 'Salvar no link'}</button>
-        <small>${saveState === 'error' ? 'Não foi possível salvar. Tente de novo.' : 'Quem abrir o link vê este mapa sem precisar do arquivo.'}</small>
-      </div>`}
+      <${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} det=${det} />
     </section>
 
     <aside class="side">
       <${Stats} view=${view} />
       <${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${selectFromList} />
-      <${Saved} maps=${maps} current=${snap && snap.id} onOpen=${m => { setSnap(m); setSelected(null); }} canEdit=${canEdit}
-        onDelete=${m => { db.collection('mapas').doc(m.id).delete().catch(() => { }); if (snap && snap.id === m.id) setSnap(null); }} />
-      <${Source} ds=${ds} busy=${busy} progress=${progress} error=${error} onFile=${onFile} compact=${hasData}
-        onClear=${() => { idb.del('ds'); setDs(null); setCandKey(null); setSelected(null); }} />
-      <p class="credits">Fontes: TSE, Portal de Dados Abertos (votação nominal por município e zona). Malha municipal IBGE, simplificada.</p>
+      <${Fonte} item=${item} />
+      <p class="credits">Fontes: TSE, API de resultados (ciclo atual) e Portal de Dados Abertos (histórico). Malha municipal IBGE, simplificada.</p>
     </aside>
   </div>`;
 }
