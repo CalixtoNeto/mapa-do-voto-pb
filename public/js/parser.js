@@ -116,3 +116,66 @@ async function parseTSE(file, uf, resolveMun, onProgress){
   if(!r.found) throw new Error('O .zip não contém um CSV da '+uf+'. Confira se é o arquivo “votacao_candidato_munzona” do TSE.');
   return r.agg.result(file.name);
 }
+
+// ---------- Votos por local de votação (arquivo votacao_secao) ----------
+// Complemento opcional: soma, por município e local de votação, os votos nominais de cada candidato.
+// Dígitos mínimos do número de um candidato por cargo (menos que isso é voto de legenda).
+const MIN_DIG = { '1': 2, '3': 2, '5': 3, '6': 4, '7': 5, '11': 2, '13': 5 };
+const REQ_SECAO = ['ANO_ELEICAO','NR_TURNO','SG_UF','CD_MUNICIPIO','NM_MUNICIPIO','NR_ZONA','CD_CARGO','NR_VOTAVEL','QT_VOTOS','NR_LOCAL_VOTACAO'];
+
+class SecaoAggregator{
+  constructor(uf, resolveMun){ this.uf=uf; this.resolve=resolveMun; this.header=null; this.locais={}; this.idx={}; this.votos={}; this.anos=new Set(); this.rows=0; this.err=null; }
+  line(l){
+    if(this.err || !l) return;
+    if(l.charCodeAt(l.length-1)===13) l=l.slice(0,-1);
+    if(!l) return;
+    const c=splitLine(l);
+    if(!this.header){
+      const h=c.map(x=>x.trim().toUpperCase());
+      const miss=REQ_SECAO.filter(k=>h.indexOf(k)<0);
+      if(miss.length){ this.err='O arquivo não tem as colunas esperadas do TSE ('+miss.slice(0,4).join(', ')+'). Use o arquivo “votação por seção eleitoral” (votacao_secao).'; return; }
+      const ix={}; h.forEach((k,i)=>ix[k]=i); this.ix=ix; this.header=h; return;
+    }
+    const ix=this.ix;
+    if(c[ix.SG_UF]!==this.uf) return;
+    const cargo=c[ix.CD_CARGO], nr=c[ix.NR_VOTAVEL], min=MIN_DIG[cargo];
+    if(!min || nr.length<min || nr==='95' || nr==='96') return;
+    const ibge=this.resolve(c[ix.CD_MUNICIPIO], c[ix.NM_MUNICIPIO]); if(!ibge) return;
+    const v=parseInt(c[ix.QT_VOTOS],10)||0, ano=c[ix.ANO_ELEICAO];
+    this.anos.add(ano); this.rows++;
+    const lk=c[ix.NR_ZONA]+'|'+c[ix.NR_LOCAL_VOTACAO];
+    const arr=this.locais[ibge]||(this.locais[ibge]=[]), map=this.idx[ibge]||(this.idx[ibge]=new Map());
+    let i=map.get(lk);
+    if(i==null){ i=arr.length; map.set(lk,i); arr.push({ n: ix.NM_LOCAL_VOTACAO!=null && c[ix.NM_LOCAL_VOTACAO].trim() ? c[ix.NM_LOCAL_VOTACAO].trim() : 'Local '+c[ix.NR_LOCAL_VOTACAO]+' (zona '+c[ix.NR_ZONA]+')' }); }
+    const key=ano+'|'+c[ix.NR_TURNO]+'|'+cargo+'|'+nr;
+    const kv=this.votos[key]||(this.votos[key]={}), m=kv[ibge]||(kv[ibge]={});
+    m[i]=(m[i]||0)+v;
+  }
+  result(fileName){ return { fileName, uf:this.uf, ano:[...this.anos][0], anos:[...this.anos], rows:this.rows, locais:this.locais, votos:this.votos, loadedAt:Date.now() }; }
+}
+
+async function parseSecao(file, uf, resolveMun, onProgress){
+  const head=new Uint8Array(await file.slice(0,4).arrayBuffer());
+  const isZip=head[0]===0x50 && head[1]===0x4B;
+  const agg=new SecaoAggregator(uf,resolveMun);
+  const fim = () => {
+    if(agg.err) throw new Error(agg.err);
+    if(!agg.rows) throw new Error('O arquivo não tem votos da '+uf+' para os cargos do mapa.');
+    if(agg.anos.length>1) throw new Error('O arquivo mistura mais de uma eleição.');
+    return agg.result(file.name);
+  };
+  if(!isZip){ await readStream(file, makeLineFeeder(agg), onProgress); return fim(); }
+  let found=false, ferr=null;
+  const uz=new fflate.Unzip(); uz.register(fflate.UnzipInflate);
+  const re=new RegExp('_'+uf+'\\.csv$','i');
+  uz.onfile=f=>{
+    if(!re.test(f.name.split('/').pop())) return;
+    found=true; const feed=makeLineFeeder(agg);
+    f.ondata=(err,chunk,final)=>{ if(err){ ferr=err; return; } feed(chunk,final); };
+    f.start();
+  };
+  await readStream(file,(chunk,final)=>{ uz.push(chunk||new Uint8Array(0),final); }, onProgress);
+  if(ferr) throw new Error('Não foi possível descompactar o arquivo.');
+  if(!found) throw new Error('O .zip não contém um CSV da '+uf+'. Confira se é o arquivo “votacao_secao” do TSE.');
+  return fim();
+}
