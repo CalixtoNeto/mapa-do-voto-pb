@@ -1,0 +1,16 @@
+{
+  "name": "mapa-do-voto-pb",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Votos por município da Paraíba a partir dos dados oficiais do TSE",
+  "type": "module",
+  "scripts": {
+    "malha": "node scripts/gerar-malha.mjs",
+    "tabela": "node scripts/gerar-tabela-tse.mjs",
+    "dados": "npm run malha && npm run tabela",
+    "dev": "npx --yes serve public -l 5173"
+  },
+  "devDependencies": {
+    "mapshaper": "^0.6.0"
+  }
+}
