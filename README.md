@@ -9,6 +9,7 @@ Votos de candidatos a deputado federal e estadual em cada um dos 223 municípios
 1. Baixe `votacao_candidato_munzona_ANO.zip` no Portal de Dados Abertos do TSE.
 2. Abra o site e envie o .zip (ou só o CSV da PB). A leitura acontece no navegador.
 3. Escolha o cargo e o candidato.
+4. (Opcional) Clique num município e envie também `votacao_secao_ANO_PB.zip` do TSE para ver os votos do candidato em cada local de votação (escola) daquele município. O arquivo serve para todos os municípios e candidatos do ano e fica guardado no seu aparelho.
 
 ## Desenvolvimento
 
