@@ -50,6 +50,9 @@ const LOWER = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'di', 'du']);
 const titleCase = s => String(s || '').toLowerCase().split(/\s+/).map((w, i) => (i && LOWER.has(w)) ? w : w.replace(/^(\p{L})/u, c => c.toUpperCase())).join(' ');
 const sentence = s => { s = String(s || '').toLowerCase(); return s.charAt(0).toUpperCase() + s.slice(1); };
 const cargoLabel = s => sentence(s);
+// Nome de escola/local: título em caixa mista, mas siglas (EMEF, E.E.E.F.M., CRAS…) continuam em maiúsculas
+const SIGLAS = new Set(['EMEF', 'EEEF', 'EEEFM', 'EMEB', 'EMEI', 'ECI', 'CRAS', 'SENAI', 'SESI', 'CAIC', 'APAE', 'UFPB', 'IFPB', 'UEPB', 'CEF', 'EEEM']);
+const localNome = s => String(s || '').split(/\s+/).map((w, i) => (SIGLAS.has(w) || w.includes('.') && w.length <= 10) ? w : titleCase(w).replace(/^(de|da|do|das|dos|e)$/i, m => i ? m.toLowerCase() : titleCase(m))).join(' ');
 const sitLabel = s => (!s || /^#/.test(s)) ? '' : sentence(s).replace(/ qp$/i, ' QP').replace(/ media$/i, ' média');
 const CARGO_ORDER = { '6': 0, '7': 1, '8': 2, '5': 3, '3': 4, '1': 5, '11': 6, '13': 7 };
 
@@ -230,9 +233,30 @@ function Legend({ classes, metric, setMetric, view }) {
   </div>`;
 }
 
-function MuniCard({ view, id, pinned, onClear }) {
+// Complemento opcional: arquivo de votação por seção, que traz os votos de cada local de votação
+function SecaoBox({ ano, busy, progress, error, onFile }) {
+  const inp = useRef();
+  const url = `https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_secao/votacao_secao_${ano}_${UF}.zip`;
+  return html`<div class="secao-box">
+    <p>Para ver os votos por escola (local de votação) em cada município, baixe também o arquivo de votação por seção de ${ano} e envie aqui.</p>
+    <div class="row">
+      <a class="btn ghost" href=${url} target="_blank" rel="noopener">Baixar do TSE</a>
+      ${busy ? html`<div class="progress" role="progressbar" aria-valuenow=${Math.round(progress * 100)} aria-valuemin="0" aria-valuemax="100"><i style=${`width:${(progress * 100).toFixed(1)}%`}></i><span>Lendo… ${Math.round(progress * 100)}%</span></div>`
+        : html`<button type="button" class="btn" onClick=${() => inp.current && inp.current.click()}>Enviar arquivo</button>`}
+    </div>
+    ${error && html`<p class="error" role="alert">${error}</p>`}
+    <input ref=${inp} type="file" accept=".zip,.csv,text/csv,application/zip" hidden onChange=${e => { const f = e.target.files[0]; e.target.value = ''; f && onFile(f); }} />
+  </div>`;
+}
+
+function MuniCard({ view, id, pinned, onClear, sec }) {
   if (!view || !id) return html`<p class="hint">${view ? 'Toque ou clique num município para ver os números.' : ''}</p>`;
   const m = BYID[id]; const v = view.votos[id] || 0, t = view.tot[id] || 0, r = view.rank && view.rank[id];
+  const det = sec.data[view.ano];
+  const locs = det && det.locais[id];
+  const votos = (det && det.votos[[view.ano, view.turno, view.cargo, view.nr].join('|')] || {})[id] || {};
+  const rows = locs ? locs.map((l, i) => ({ n: l.n, v: votos[i] || 0 })).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, 'pt-BR')) : [];
+  const max = Math.max(1, ...rows.map(x => x.v));
   return html`<div class=${'muni' + (pinned ? ' pinned' : '')} aria-live="polite">
     <div class="muni-head"><h3>${m.name}</h3>${pinned && html`<button type="button" class="link" onClick=${onClear}>Fechar</button>`}</div>
     <dl>
@@ -240,6 +264,13 @@ function MuniCard({ view, id, pinned, onClear }) {
       <div><dt>Dos votos nominais do cargo</dt><dd>${t ? pct(v / t) : '—'}</dd></div>
       <div><dt>Posição no município</dt><dd>${r ? `${r}º` : '—'}</dd></div>
     </dl>
+    ${det ? (rows.length ? html`<h4 class="locais-h">Votos por local de votação</h4>
+        <ul class="locais" aria-label="Votos por local de votação">
+          ${rows.map(x => html`<li><span class="ln">${localNome(x.n)}</span><span class="lv">${nf.format(x.v)}</span>
+            <span class="bar" aria-hidden="true"><i style=${`width:${(x.v / max * 100).toFixed(1)}%`}></i></span></li>`)}
+        </ul>`
+      : html`<p class="hint">Este município não aparece no arquivo de votação por seção carregado.</p>`)
+    : (pinned && html`<${SecaoBox} ano=${view.ano} busy=${sec.busy} progress=${sec.progress} error=${sec.error} onFile=${sec.onFile} />`)}
   </div>`;
 }
 
@@ -370,6 +401,20 @@ function App() {
   const [selected, setSelected] = useState(null), [hover, setHover] = useState(null);
   const [db, setDb] = useState(null), [canEdit, setCanEdit] = useState(false), [maps, setMaps] = useState([]), [saveState, setSaveState] = useState('');
   const mapRef = useRef();
+  // votos por local de votação (arquivo votacao_secao), um por ano
+  const [secData, setSecData] = useState({}), [secBusy, setSecBusy] = useState(false), [secProgress, setSecProgress] = useState(0), [secError, setSecError] = useState('');
+  useEffect(() => {
+    (async () => { const got = {}; for (const a of ['2026', '2024', '2022', '2020', '2018']) { const d = await idb.get('sec-' + a); if (d && d.votos) got[a] = d; } setSecData(got); })();
+  }, []);
+  async function onSecaoFile(f) {
+    setSecBusy(true); setSecError(''); setSecProgress(0);
+    try {
+      const d = await parseSecao(f, UF, resolveMun, setSecProgress);
+      setSecData(prev => ({ ...prev, [d.ano]: d })); idb.set('sec-' + d.ano, d);
+      if (view && d.ano !== view.ano) setSecError(`Esse arquivo é de ${d.ano}, e o mapa mostra ${view.ano}. Ele foi guardado e aparece quando você abrir uma eleição de ${d.ano}.`);
+    } catch (e) { setSecError(e.message || 'Não foi possível ler o arquivo.'); }
+    setSecBusy(false);
+  }
 
   useEffect(() => { idb.get('ds').then(d => { if (d && d.cands) setDs(d); }); }, []);
   useEffect(() => {
@@ -465,7 +510,8 @@ function App() {
           <p>${hasData ? 'Busque pelo nome de urna, número ou partido.' : `Veja onde cada candidato a deputado foi votado nos ${N_MUN} municípios da ${UF_NOME}.`}</p></div>`}
       <${MapCanvas} view=${view} metric=${metric} selected=${selected} onSelect=${setSelected} hover=${hover} onHover=${setHover} classes=${classes} />
       ${view && html`<${Legend} classes=${classes} metric=${metric} setMetric=${setMetric} view=${view} />`}
-      <${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} />
+      <${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)}
+        sec=${{ data: secData, busy: secBusy, progress: secProgress, error: secError, onFile: onSecaoFile }} />
       ${view && db && canEdit && !snap && html`<div class="share">
         <button type="button" class="btn ghost" disabled=${saveState === 'saving'} onClick=${save}>${saveState === 'saved' ? 'Salvo no link' : saveState === 'saving' ? 'Salvando…' : 'Salvar no link'}</button>
         <small>${saveState === 'error' ? 'Não foi possível salvar. Tente de novo.' : 'Quem abrir o link vê este mapa sem precisar do arquivo.'}</small>
