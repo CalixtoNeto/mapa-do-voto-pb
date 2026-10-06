@@ -8,8 +8,7 @@
     "malha": "node scripts/gerar-malha.mjs",
     "tabela": "node scripts/gerar-tabela-tse.mjs",
     "dados": "npm run malha && npm run tabela",
-    "historico": "node scripts/gerar-dados.mjs historico",
-    "atual": "node scripts/gerar-dados.mjs atual",
+    "eleicoes": "node scripts/gerar-dados.mjs",
     "dev": "npx --yes serve public -l 5173"
   },
   "devDependencies": {
