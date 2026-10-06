@@ -104,12 +104,29 @@ async function viaApi(ano, porTurno, precisa) {
   return adicionados;
 }
 
+// ---------- Nome dos locais de votação ----------
+// Em 2026 o CSV por seção ainda vem com o nome "#NULO#"; o nome certo está na tabela "Eleitorado por local de votação".
+const semNome = n => !n || /^#.*#$/.test(n.trim());
+async function nomesDosLocais(ano) {
+  const zip = `${TMP}/local-votacao-${ano}.zip`;
+  if (!await baixar(`${CDN}/eleitorado_locais_votacao/eleitorado_local_votacao_${ano}.zip`, zip)) return null;
+  const nomes = new Map(); let ix = null;
+  await lerCsvsDoZip(zip, [{ padrao: /\.csv$/i, aoLinha: (l, cab) => {
+    if (cab) { ix = Object.fromEntries(splitLine(l).map((k, i) => [k.trim().toUpperCase(), i])); return; }
+    if (l.indexOf(`"${UF}"`) < 0) return;
+    const c = splitLine(l); if (c[ix.SG_UF] !== UF) return;
+    const k = `${c[ix.CD_MUNICIPIO]}|${c[ix.NR_ZONA]}|${c[ix.NR_SECAO]}`;
+    if (!nomes.has(k) && !semNome(c[ix.NM_LOCAL_VOTACAO])) nomes.set(k, c[ix.NM_LOCAL_VOTACAO].trim());
+  } }]);
+  return nomes;
+}
+
 // ---------- Votos por local de votação (CSV por seção; só traz o nome do local de 2018 em diante) ----------
 const MIN_DIG = { '1': 2, '3': 2, '5': 3, '6': 4, '7': 5 };
 async function locaisViaCsv(ano) {
   const zip = `${TMP}/secao-${ano}-${UF}.zip`;
   if (!await baixar(`${CDN}/votacao_secao/votacao_secao_${ano}_${UF}.zip`, zip)) return null;
-  const porTurno = {}; let ix = null;
+  const porTurno = {}, pendentes = []; let ix = null;
   await lerCsvsDoZip(zip, [{ padrao: new RegExp(`_${UF}\\.csv$`, 'i'), aoLinha: (l, cab) => {
     if (cab) { ix = Object.fromEntries(splitLine(l).map((k, i) => [k.trim().toUpperCase(), i])); if (ix.NM_LOCAL_VOTACAO == null) throw new Error('sem nome de local'); return; }
     const c = splitLine(l), cargo = c[ix.CD_CARGO], nr = c[ix.NR_VOTAVEL];
@@ -117,9 +134,21 @@ async function locaisViaCsv(ano) {
     const ibge = ibgeDe(c[ix.CD_MUNICIPIO]); if (!ibge) return;
     const t = porTurno[c[ix.NR_TURNO]] ||= { locais: {}, idx: {}, votos: {} };
     const lk = c[ix.NR_ZONA] + '|' + c[ix.NR_LOCAL_VOTACAO], arr = t.locais[ibge] ||= [], mapa = t.idx[ibge] ||= new Map();
-    let i = mapa.get(lk); if (i == null) { i = arr.length; mapa.set(lk, i); arr.push({ n: c[ix.NM_LOCAL_VOTACAO].trim() || `Local ${c[ix.NR_LOCAL_VOTACAO]} (zona ${c[ix.NR_ZONA]})` }); }
+    let i = mapa.get(lk); if (i == null) {
+      i = arr.length; mapa.set(lk, i);
+      const nome = c[ix.NM_LOCAL_VOTACAO].trim(), reserva = `Local ${c[ix.NR_LOCAL_VOTACAO]} (zona ${c[ix.NR_ZONA]})`;
+      const local = { n: semNome(nome) ? reserva : nome }; arr.push(local);
+      if (semNome(nome)) pendentes.push({ local, chave: `${c[ix.CD_MUNICIPIO]}|${c[ix.NR_ZONA]}|${c[ix.NR_SECAO]}` });
+    }
     const m = ((t.votos[cargo + '|' + nr] ||= {})[ibge] ||= {}); m[i] = (m[i] || 0) + (parseInt(c[ix.QT_VOTOS], 10) || 0);
   } }]);
+  if (pendentes.length) {
+    console.log(`  ${pendentes.length} locais sem nome no CSV por seção; buscando na tabela de locais de votação`);
+    const nomes = await nomesDosLocais(ano).catch(e => { console.warn(`  tabela de locais indisponível (${e.message})`); return null; });
+    let achados = 0;
+    for (const p of pendentes) { const n = nomes?.get(p.chave); if (n) { p.local.n = n; achados++; } }
+    console.log(`  nomes corrigidos: ${achados} de ${pendentes.length}`);
+  }
   return Object.fromEntries(Object.entries(porTurno).map(([tn, t]) => [tn, { locais: t.locais, votos: t.votos }]));
 }
 
