@@ -124,24 +124,35 @@ async function nomesDosLocais(ano) {
 // ---------- Votos por local de votação (CSV por seção; só traz o nome do local de 2018 em diante) ----------
 const MIN_DIG = { '1': 2, '3': 2, '5': 3, '6': 4, '7': 5 };
 async function locaisViaCsv(ano) {
-  const zip = `${TMP}/secao-${ano}-${UF}.zip`;
-  if (!await baixar(`${CDN}/votacao_secao/votacao_secao_${ano}_${UF}.zip`, zip)) return null;
-  const porTurno = {}, pendentes = []; let ix = null;
-  await lerCsvsDoZip(zip, [{ padrao: new RegExp(`_${UF}\\.csv$`, 'i'), aoLinha: (l, cab) => {
-    if (cab) { ix = Object.fromEntries(splitLine(l).map((k, i) => [k.trim().toUpperCase(), i])); if (ix.NM_LOCAL_VOTACAO == null) throw new Error('sem nome de local'); return; }
-    const c = splitLine(l), cargo = c[ix.CD_CARGO], nr = c[ix.NR_VOTAVEL];
-    if (c[ix.SG_UF] !== UF || !MIN_DIG[cargo] || nr.length < MIN_DIG[cargo] || nr === '95' || nr === '96' || c[ix.ANO_ELEICAO] !== ano) return;
-    const ibge = ibgeDe(c[ix.CD_MUNICIPIO]); if (!ibge) return;
-    const t = porTurno[c[ix.NR_TURNO]] ||= { locais: {}, idx: {}, votos: {} };
-    const lk = c[ix.NR_ZONA] + '|' + c[ix.NR_LOCAL_VOTACAO], arr = t.locais[ibge] ||= [], mapa = t.idx[ibge] ||= new Map();
-    let i = mapa.get(lk); if (i == null) {
-      i = arr.length; mapa.set(lk, i);
-      const nome = c[ix.NM_LOCAL_VOTACAO].trim(), reserva = `Local ${c[ix.NR_LOCAL_VOTACAO]} (zona ${c[ix.NR_ZONA]})`;
-      const local = { n: semNome(nome) ? reserva : nome }; arr.push(local);
-      if (semNome(nome)) pendentes.push({ local, chave: `${c[ix.CD_MUNICIPIO]}|${c[ix.NR_ZONA]}|${c[ix.NR_SECAO]}` });
-    }
-    const m = ((t.votos[cargo + '|' + nr] ||= {})[ibge] ||= {}); m[i] = (m[i] || 0) + (parseInt(c[ix.QT_VOTOS], 10) || 0);
-  } }]);
+  const zipPb = `${TMP}/secao-${ano}-${UF}.zip`;
+  if (!await baixar(`${CDN}/votacao_secao/votacao_secao_${ano}_${UF}.zip`, zipPb)) return null;
+  const porTurno = {}, pendentes = [];
+  // mesmo tratamento para o arquivo da UF e para o nacional (que só tem o presidente)
+  const agregador = cargoOk => {
+    let ix = null;
+    return (l, cab) => {
+      if (cab) { ix = Object.fromEntries(splitLine(l).map((k, i) => [k.trim().toUpperCase(), i])); if (ix.NM_LOCAL_VOTACAO == null) throw new Error('sem nome de local'); return; }
+      const c = splitLine(l), cargo = c[ix.CD_CARGO], nr = c[ix.NR_VOTAVEL];
+      if (c[ix.SG_UF] !== UF || !cargoOk(cargo) || !MIN_DIG[cargo] || nr.length < MIN_DIG[cargo] || nr === '95' || nr === '96' || c[ix.ANO_ELEICAO] !== ano) return;
+      const ibge = ibgeDe(c[ix.CD_MUNICIPIO]); if (!ibge) return;
+      const t = porTurno[c[ix.NR_TURNO]] ||= { locais: {}, idx: {}, votos: {} };
+      const lk = c[ix.NR_ZONA] + '|' + c[ix.NR_LOCAL_VOTACAO], arr = t.locais[ibge] ||= [], mapa = t.idx[ibge] ||= new Map();
+      let i = mapa.get(lk);
+      if (i == null) {
+        i = arr.length; mapa.set(lk, i);
+        const nome = c[ix.NM_LOCAL_VOTACAO].trim(), reserva = `Local ${c[ix.NR_LOCAL_VOTACAO]} (zona ${c[ix.NR_ZONA]})`;
+        const local = { n: semNome(nome) ? reserva : nome }; arr.push(local);
+        if (semNome(nome)) pendentes.push({ local, chave: `${c[ix.CD_MUNICIPIO]}|${c[ix.NR_ZONA]}|${c[ix.NR_SECAO]}` });
+      }
+      const m = ((t.votos[cargo + '|' + nr] ||= {})[ibge] ||= {}); m[i] = (m[i] || 0) + (parseInt(c[ix.QT_VOTOS], 10) || 0);
+    };
+  };
+  await lerCsvsDoZip(zipPb, [{ padrao: new RegExp(`_${UF}\\.csv$`, 'i'), aoLinha: agregador(c => c !== '1') }]);
+  // o presidente por seção vem num arquivo nacional separado
+  try {
+    const zipBr = `${TMP}/secao-${ano}-BR.zip`;
+    if (await baixar(`${CDN}/votacao_secao/votacao_secao_${ano}_BR.zip`, zipBr)) await lerCsvsDoZip(zipBr, [{ padrao: /_BR\.csv$/i, aoLinha: agregador(c => c === '1') }]);
+  } catch (e) { console.warn(`  presidente por seção indisponível (${e.message})`); }
   if (pendentes.length) {
     console.log(`  ${pendentes.length} locais sem nome no CSV por seção; buscando na tabela de locais de votação`);
     const nomes = await nomesDosLocais(ano).catch(e => { console.warn(`  tabela de locais indisponível (${e.message})`); return null; });
@@ -153,6 +164,18 @@ async function locaisViaCsv(ano) {
 }
 
 // ---------- Saída ----------
+// O CSV por seção também conta votos de candidatos cuja candidatura foi anulada; o CSV por município só conta
+// os válidos. Fica só o que bate com o total do município, para a lista de locais nunca contradizer o card.
+function podarLocais(loc, ds) {
+  const porChave = new Map([...ds.cands.values()].map(c => [`${c.cargo}|${c.nr}`, c]));
+  for (const [chave, muns] of Object.entries(loc.votos)) {
+    const cand = porChave.get(chave);
+    if (!cand) { delete loc.votos[chave]; continue; }
+    for (const ibge of Object.keys(muns)) if (!(cand.mun[ibge] > 0)) delete muns[ibge];
+    if (!Object.keys(muns).length) delete loc.votos[chave];
+  }
+}
+
 async function escrever(ano, porTurno, locais) {
   await mkdir(DIR, { recursive: true });
   for (const [turno, ds] of Object.entries(porTurno)) {
@@ -161,6 +184,7 @@ async function escrever(ano, porTurno, locais) {
     const arq = `${ano}-t${turno}`;
     await writeFile(`${DIR}/${arq}.json`, JSON.stringify({ ano, turno, uf: UF, fonte: ds.fonte, final: ds.final, atualizadoEm: ds.atualizadoEm || new Date().toISOString(), cargos, cands, tot: ds.tot }));
     const loc = locais?.[turno];
+    if (loc) podarLocais(loc, ds);
     if (loc) await writeFile(`${DIR}/${arq}-locais.json`, JSON.stringify(loc));
     console.log(`  → ${DIR}/${arq}.json (${cands.length} candidatos, fonte ${ds.fonte})${loc ? ' + locais de votação' : ''}`);
   }
