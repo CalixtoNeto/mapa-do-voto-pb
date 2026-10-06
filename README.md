@@ -12,24 +12,34 @@ Abra o site: ele lista todas as eleições disponíveis sozinho, sem precisar ba
 
 ## De onde vêm os dados
 
-| | Onde fica | Como é gerado |
-|---|---|---|
-| **Histórico** (2014, 2018, 2022) | `public/data/historico/ANO-tTURNO.json`, commitado | Uma vez, com `npm run historico`. Nunca mais muda. |
-| **Ciclo atual** (2026) | `public/data/atual/`, **não** commitado | Pelo workflow, a cada publicação (push, de hora em hora e manualmente). Vai direto para o Pages. |
+Os resultados ficam no repositório, em `public/data/eleicoes/`: um `ANO-tTURNO.json` por eleição e turno, o `ANO-tTURNO-locais.json` com os votos por escola (carregado só ao clicar num município) e um `index.json` que o site lê para listar as eleições. O site é totalmente estático: o navegador do visitante nunca chama o TSE.
 
-Para cada ciclo, o gerador tenta a [API de resultados do TSE](https://resultados.tse.jus.br/). Se ela não tiver o ano (a API só guarda o ciclo atual e o anterior), baixa o CSV do Portal de Dados Abertos e agrega no próprio script. Quem busca é o workflow, uma vez por execução, com poucas requisições em paralelo, retentativa e cache. O navegador do visitante nunca chama a API do TSE, o que evita bloqueios.
+O gerador (`scripts/gerar-dados.mjs`) segue esta ordem para cada ano:
 
-- O detalhe por local de votação (`ANO-tTURNO-locais.json`, carregado só ao clicar num município) sai do CSV por seção, de 2018 em diante. Em 2014 o TSE não publicou o nome do local.
-- Presidente só aparece quando os dados vêm da API (2026). O CSV da Paraíba não traz esse cargo.
-- Com a apuração final em cache, o workflow termina em segundos. Quando o ciclo atual terminar, mova-o para o histórico com `npm run historico -- ANO`.
+1. **Dados Abertos do TSE** (CSV de votação nominal por município e zona). O presidente vem do arquivo nacional (`_BRASIL.csv`) do mesmo .zip.
+2. **API de resultados do TSE**, só para o que o CSV ainda não tem: um 2º turno recém-apurado ou um cargo que o arquivo ainda não traz (hoje, o presidente de 2026). A API só guarda o ciclo atual e o anterior.
+3. **CSV por seção**, para o detalhe por local de votação (de 2018 em diante; em 2014 o TSE não publicou o nome do local).
+
+Eleições já geradas: 2014, 2018, 2022 e 2026.
+
+## Nas próximas eleições
+
+No GitHub, abra **Actions → Atualizar dados de uma eleição → Run workflow** e informe o ano. O workflow gera os arquivos, commita em `public/data/eleicoes/` e dispara a publicação do site. Marque "refazer" enquanto a apuração estiver em andamento ou para pegar o 2º turno.
+
+O mesmo pode ser feito localmente, e o workflow só repete esses passos:
+
+```bash
+npm install
+npm run eleicoes -- 2030 --forcar   # gera public/data/eleicoes/2030-t*.json
+git add public/data && git commit -m "dados: eleição 2030" && git push
+```
 
 ## Desenvolvimento
 
 ```bash
 npm install
 npm run dados       # malha (IBGE) e tabela TSE→IBGE
-npm run historico   # gera o histórico que ainda não existe (use -- ANO para escolher; --forcar para refazer)
-npm run atual       # gera o ciclo atual em public/data/atual
+npm run eleicoes    # gera os anos que ainda não existem (use -- ANO para escolher; --forcar para refazer)
 npm run dev         # http://localhost:5173
 ```
 
@@ -39,6 +49,6 @@ Preact + htm, Canvas 2D, TopoJSON (malha IBGE simplificada com mapshaper) e ffla
 
 ## Fontes
 
-- TSE: API de resultados e Portal de Dados Abertos (votação nominal por município e zona; votação por seção).
+- TSE: Portal de Dados Abertos (votação nominal por município e zona; votação por seção) e API de resultados.
 - Malha municipal: IBGE, via tbrugz/geodata-br.
 - Tabela TSE↔IBGE: betafcc/Municipios-Brasileiros-TSE.
