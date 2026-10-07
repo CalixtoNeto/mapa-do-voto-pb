@@ -53,6 +53,29 @@ npm run eleicoes    # gera os anos que ainda não existem (use -- ANO para escol
 npm run dev         # http://localhost:5173
 ```
 
+## Testes
+
+```bash
+npm test
+```
+
+Rodam offline, em menos de um segundo, sem baixar nada do TSE:
+
+- `test/caracterizacao.test.mjs` é um *golden master*: monta um cenário pequeno de 2022 com os mesmos formatos do TSE (zips em `tmp/` e um `fetch` falso), roda o gerador inteiro e compara a saída com `test/fixtures/esperado/`. Se uma mudança na saída for intencional, regrave com `ATUALIZAR_ESPERADO=1 npm test` e revise o diff dos arquivos esperados.
+- `test/unidade/` testa cada regra isolada: divisão do CSV, filtro de voto branco, nulo e de legenda, nomes `#NULO#`, poda de candidaturas anuladas, ligação de pessoas entre eleições e o que é pedido à API.
+
+## Organização do gerador
+
+| Pasta | O que tem |
+|---|---|
+| `scripts/gerar-dados.mjs` | Linha de comando: escolhe os anos e encadeia as etapas |
+| `scripts/eleicao/` | Configuração (UF, cargos), conversão TSE→IBGE e a apuração (soma de votos) |
+| `scripts/fontes/` | Uma fonte por arquivo: CSV por município, API de resultados, CSV por seção e tabela de locais |
+| `scripts/saida/` | Poda dos locais, `pessoas.json`, `index.json` e escrita dos arquivos |
+| `scripts/lib/` | CSV do TSE e acesso à rede (retentativa, paralelismo limitado, cache em disco, leitura de .zip) |
+
+Cada fonte separa o tratamento de uma linha (função pura, testada sem .zip) da leitura do arquivo.
+
 ## Stack
 
 Preact + htm, Canvas 2D, TopoJSON (malha IBGE simplificada com mapshaper) e fflate (só nos scripts). Sem etapa de build: a pasta `public/` é o site.
