@@ -9,7 +9,8 @@
     "tabela": "node scripts/gerar-tabela-tse.mjs",
     "dados": "npm run malha && npm run tabela",
     "eleicoes": "node scripts/gerar-dados.mjs",
-    "dev": "npx --yes serve public -l 5173"
+    "dev": "npx --yes serve public -l 5173",
+    "test": "node --test 'test/**/*.test.mjs'"
   },
   "devDependencies": {
     "fflate": "^0.8.3",
