@@ -1,0 +1,47 @@
+{
+ "geradoEm": "<data>",
+ "eleicoes": [
+  {
+   "ano": "2022",
+   "turno": "1",
+   "arquivo": "2022-t1.json",
+   "locais": "2022-t1-locais.json",
+   "cargos": [
+    {
+     "cd": "1",
+     "nome": "Presidente"
+    },
+    {
+     "cd": "3",
+     "nome": "Governador"
+    },
+    {
+     "cd": "6",
+     "nome": "Deputado Federal"
+    }
+   ],
+   "fonte": "csv",
+   "final": true,
+   "atualizadoEm": "<data>"
+  },
+  {
+   "ano": "2022",
+   "turno": "2",
+   "arquivo": "2022-t2.json",
+   "locais": "2022-t2-locais.json",
+   "cargos": [
+    {
+     "cd": "1",
+     "nome": "Presidente"
+    },
+    {
+     "cd": "3",
+     "nome": "Governador"
+    }
+   ],
+   "fonte": "csv+api",
+   "final": true,
+   "atualizadoEm": "2022-10-30T20:00:00"
+  }
+ ]
+}

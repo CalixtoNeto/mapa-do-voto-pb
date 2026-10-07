@@ -1,0 +1,60 @@
+{
+ "ano": "2022",
+ "turno": "2",
+ "uf": "PB",
+ "fonte": "csv+api",
+ "final": true,
+ "atualizadoEm": "2022-10-30T20:00:00",
+ "cargos": [
+  {
+   "cd": "1",
+   "nome": "Presidente"
+  },
+  {
+   "cd": "3",
+   "nome": "Governador"
+  }
+ ],
+ "cands": [
+  {
+   "key": "2022|2|1|900",
+   "ano": "2022",
+   "turno": "2",
+   "cargo": "1",
+   "cargoNome": "Presidente",
+   "nr": "13",
+   "urna": "PRESIDENTE",
+   "nome": "PESSOA PRESIDENTE",
+   "partido": "PART",
+   "sit": "ELEITO",
+   "total": 1100,
+   "mun": {
+    "2507507": 1100
+   }
+  },
+  {
+   "key": "2022|2|3|150",
+   "ano": "2022",
+   "turno": "2",
+   "cargo": "3",
+   "cargoNome": "Governador",
+   "nr": "40",
+   "urna": "JOÃO",
+   "nome": "JOÃO DA SILVA",
+   "partido": "PART",
+   "sit": "Eleito",
+   "total": 1000,
+   "mun": {
+    "2507507": 1000
+   }
+  }
+ ],
+ "tot": {
+  "2022|2|1": {
+   "2507507": 1100
+  },
+  "2022|2|3": {
+   "2507507": 1000
+  }
+ }
+}

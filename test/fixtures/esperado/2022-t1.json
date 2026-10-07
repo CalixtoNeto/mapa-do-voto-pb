@@ -1,0 +1,104 @@
+{
+ "ano": "2022",
+ "turno": "1",
+ "uf": "PB",
+ "fonte": "csv",
+ "final": true,
+ "atualizadoEm": "<data>",
+ "cargos": [
+  {
+   "cd": "1",
+   "nome": "Presidente"
+  },
+  {
+   "cd": "3",
+   "nome": "Governador"
+  },
+  {
+   "cd": "6",
+   "nome": "Deputado Federal"
+  }
+ ],
+ "cands": [
+  {
+   "key": "2022|1|1|900",
+   "ano": "2022",
+   "turno": "1",
+   "cargo": "1",
+   "cargoNome": "Presidente",
+   "nr": "13",
+   "urna": "PRESIDENTE",
+   "nome": "PESSOA PRESIDENTE",
+   "partido": "PART",
+   "sit": "2º TURNO",
+   "total": 1800,
+   "mun": {
+    "2501534": 800,
+    "2507507": 1000
+   }
+  },
+  {
+   "key": "2022|1|3|150",
+   "ano": "2022",
+   "turno": "1",
+   "cargo": "3",
+   "cargoNome": "Governador",
+   "nr": "40",
+   "urna": "JOÃO",
+   "nome": "JOÃO DA SILVA",
+   "partido": "PART",
+   "sit": "2º TURNO",
+   "total": 800,
+   "mun": {
+    "2501534": 300,
+    "2507507": 500
+   }
+  },
+  {
+   "key": "2022|1|3|151",
+   "ano": "2022",
+   "turno": "1",
+   "cargo": "3",
+   "cargoNome": "Governador",
+   "nr": "45",
+   "urna": "MARIA",
+   "nome": "MARIA SOUZA",
+   "partido": "PART",
+   "sit": "",
+   "total": 600,
+   "mun": {
+    "2501534": 200,
+    "2507507": 400
+   }
+  },
+  {
+   "key": "2022|1|6|160",
+   "ano": "2022",
+   "turno": "1",
+   "cargo": "6",
+   "cargoNome": "Deputado Federal",
+   "nr": "1234",
+   "urna": "ZÉ",
+   "nome": "JOSÉ DE SOUZA",
+   "partido": "PART",
+   "sit": "ELEITO POR QP",
+   "total": 100,
+   "mun": {
+    "2507507": 100
+   }
+  }
+ ],
+ "tot": {
+  "2022|1|3": {
+   "2501534": 500,
+   "2507507": 900
+  },
+  "2022|1|6": {
+   "2507507": 100
+  },
+  "2022|1|1": {
+   "2501534": 800,
+   "2507507": 1000
+  }
+ }
+}
