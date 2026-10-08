@@ -45,3 +45,13 @@ test('os bens declarados entram pelo sequencial do candidato', () => {
   aoLinha(linha(['2022', '150', '2500,50']), false);
   assert.equal(perfisComBens(lerCandidatos([maria()]), bens)[150].b, 102501);
 });
+
+test('os bens também somam por tipo, do maior para o menor', () => {
+  const bens = new Map(), tipos = new Map(), aoLinha = leitorDeBens({ ano: '2022', bens, tipos });
+  aoLinha(linha(['ANO_ELEICAO', 'SQ_CANDIDATO', 'DS_TIPO_BEM_CANDIDATO', 'VR_BEM_CANDIDATO']), true);
+  for (const [tipo, v] of [['Casa', '300000,00'], ['Veículo automotor terrestre', '50000,00'], ['Casa', '100000,00'], ['#NULO#', '10,00']]) {
+    aoLinha(linha(['2022', '150', tipo, v]), false);
+  }
+  const perfil = perfisComBens(lerCandidatos([maria()]), bens, tipos)[150];
+  assert.deepEqual([perfil.b, perfil.bt], [450010, [['Casa', 400000], ['Veículo automotor terrestre', 50000], ['Outros', 10]]]);
+});

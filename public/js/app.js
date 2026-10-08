@@ -100,6 +100,7 @@ const avisoComparacao = ({ ant, rec }) => ant.cargo !== rec.cargo
 const CFG = {
   chaveDe: c => c.key.split('|')[3], votosDe: c => c.mun, totDe: (ds, c) => ds.tot[c.ano + '|' + c.turno + '|' + c.cargo] || {},
   lugares: () => MUNIS.map(m => m.id), lugarNome: 'município', lugaresNome: 'municípios', regiao: 'na Paraíba',
+  agrupar: (ano, porMunicipio) => porMunicipio, nomeDoLugar: id => BYID[id] ? BYID[id].name : id,
   foraDasFinancas: c => c.cargo === '1' ? 'A campanha de presidente é nacional e a prestação de contas dela não entra neste site: os votos aqui são só os da Paraíba.' : '',
   ehMajoritario: c => c.cargo === '3' || c.cargo === '5',
   cargoPar: { '6': '7', '7': '6', '3': '5', '5': '3' }, nomeDoCargo: CARGO_NOMES,
@@ -562,6 +563,7 @@ function App() {
 
   const classes = useMemo(() => view ? quantBreaks(MUNIS.map(m => metricOf(view, m.id, metric))) : null, [view, metric]);
   const linhasDoCargo = useMemo(() => an.financas ? AN.linhasFinanceiras(cands, an.financas, CFG.chaveDe) : [], [cands, an.financas]);
+  const ctx = useMemo(() => AN.contextoDasAnalises(CFG, { ds, cands, cargo, an, indice: indiceAnalises }), [ds, cands, cargo, an, indiceAnalises]);
 
   // ---- panorama do cargo ----
   const panorama = modo === 'panorama' && !!ds && !!cargo;
@@ -653,13 +655,15 @@ function App() {
 
     <aside class="side">
       ${panorama ? html`<${StatsPanorama} comp=${compCargo} />
-        <${Panorama} cands=${cands} ano=${ds.ano} financas=${an.financas} perfis=${an.perfis} selecionado=${candKey} onPick=${escolher} />`
+        <${Panorama} cands=${cands} ano=${ds.ano} financas=${an.financas} perfis=${an.perfis} selecionado=${candKey} onPick=${escolher} ctx=${ctx} />`
       : html`${cmp ? html`<${ComparaStats} cmp=${cmp} />` : html`<${Stats} view=${view} />`}
         ${view && !cmp && html`<${PAINEL.Concentracao} cand=${cands.find(c => c.key === candKey)} />`}
-        ${view && !cmp && html`<${PAINEL.Dinheiro} cand=${cands.find(c => c.key === candKey)} financas=${an.financas} ano=${view.ano} linhasDoCargo=${linhasDoCargo} />`}
+        ${view && !cmp && html`<${PAINEL.ForcaDoVoto} cand=${cands.find(c => c.key === candKey)} ctx=${ctx} />`}
+        ${view && !cmp && html`<${PAINEL.Dinheiro} cand=${cands.find(c => c.key === candKey)} financas=${an.financas} ano=${view.ano} linhasDoCargo=${linhasDoCargo} ctx=${ctx} onPick=${escolher} />`}
         ${entradas.length > 1 && html`<${Trajetoria} entradas=${entradas} view=${view} comp=${comp} onComparar=${e => { setComp(c => c && c.ano === e.ano && c.turno === e.turno && c.cargo === e.cargo && c.nr === e.nr ? null : e); setSelected(null); }} onSair=${() => setComp(null)} />`}
         ${cmp ? html`<${ComparaRanking} cmp=${cmp} selected=${selected} onSelect=${selectFromList} />` : html`<${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${selectFromList} />`}
-        ${view && !cmp && html`<${PAINEL.QuemE} cand=${cands.find(c => c.key === candKey)} perfis=${an.perfis} patrimonio=${indiceAnalises.patrimonio} />`}
+        ${view && !cmp && html`<${PAINEL.QuemE} cand=${cands.find(c => c.key === candKey)} perfis=${an.perfis} />`}
+        ${view && !cmp && html`<${PAINEL.Patrimonio} cand=${cands.find(c => c.key === candKey)} ctx=${ctx} />`}
         ${view && !cmp && html`<${PAINEL.Dobradinhas} cand=${cands.find(c => c.key === candKey)} ds=${ds} onPick=${escolher} />`}`}
       <${Fonte} item=${item} />
       <p class="credits">Fontes: TSE, API de resultados (ciclo atual) e Portal de Dados Abertos (histórico, cadastro e bens dos candidatos, prestação de contas e comparecimento). Malha municipal IBGE, simplificada.</p>

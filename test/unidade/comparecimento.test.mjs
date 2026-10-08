@@ -34,3 +34,9 @@ test('nos arquivos novos os nulos vêm em QT_TOTAL_VOTOS_NULOS', () => {
   const novo = CABECALHO.map(c => c === 'QT_VOTOS_NULOS' ? 'QT_TOTAL_VOTOS_NULOS' : c);
   assert.deepEqual(ler([['2022', '2', 'PB', '20516', '1', '1', '10', '8', '2', '1', '3']], novo), { 2: { 1: { 2507507: [10, 8, 1, 3] } } });
 });
+
+test('quando o arquivo traz os votos de legenda, eles entram como quinto número', () => {
+  const comLegenda = [...CABECALHO, 'QT_VOTOS_LEGENDA_VALIDOS'];
+  assert.deepEqual(ler([['2022', '1', 'PB', '20516', '1', '6', '10', '8', '2', '1', '1', '2'],
+    ['2022', '1', 'PB', '20516', '2', '6', '10', '8', '2', '1', '1', '3']], comLegenda), { 1: { 6: { 2507507: [20, 16, 2, 2, 5] } } });
+});

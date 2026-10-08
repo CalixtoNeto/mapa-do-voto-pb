@@ -10,7 +10,17 @@
    "re": 1,
    "s": "ELEITO",
    "p": "PART",
-   "b": 1250000
+   "b": 1250000,
+   "bt": [
+    [
+     "Casa",
+     1000000
+    ],
+    [
+     "Veículo automotor terrestre",
+     250000
+    ]
+   ]
   },
   "151": {
    "g": "FEMININO",
@@ -28,7 +38,13 @@
    "o": "COMERCIANTE",
    "s": "ELEITO POR QP",
    "p": "OUTRO",
-   "b": 80000
+   "b": 80000,
+   "bt": [
+    [
+     "Terreno",
+     80000
+    ]
+   ]
   },
   "900": {
    "g": "MASCULINO",
@@ -38,7 +54,13 @@
    "o": "PRESIDENTE",
    "s": "2º TURNO",
    "p": "PART",
-   "b": 3000000
+   "b": 3000000,
+   "bt": [
+    [
+     "Casa",
+     3000000
+    ]
+   ]
   }
  }
 }

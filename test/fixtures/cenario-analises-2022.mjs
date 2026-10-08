@@ -23,41 +23,58 @@ const CANDIDATOS_BRASIL = [CADASTRO,
   ['2022', '1', 'BR', 'BR', '1', '900', '13', 'PART', 'MASCULINO', 'PARDA', '77', 'SUPERIOR COMPLETO', 'PRESIDENTE', 'N', '2º TURNO', 'APTO'],
   CANDIDATOS_PB[3].map((c, i) => i === 3 ? 'PB' : c),
 ];
-const BENS = ['ANO_ELEICAO', 'SG_UF', 'SQ_CANDIDATO', 'VR_BEM_CANDIDATO'];
-const RECEITA = [...ID, 'DS_FONTE_RECEITA', 'DS_ORIGEM_RECEITA', 'NR_CPF_CNPJ_DOADOR', 'NM_DOADOR', 'NM_DOADOR_RFB', 'VR_RECEITA'];
-const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'VR_DESPESA_CONTRATADA'];
+const BENS = ['ANO_ELEICAO', 'SG_UF', 'SQ_CANDIDATO', 'DS_TIPO_BEM_CANDIDATO', 'VR_BEM_CANDIDATO'];
+const RECEITA = [...ID, 'DS_FONTE_RECEITA', 'DS_ORIGEM_RECEITA', 'NR_CPF_CNPJ_DOADOR', 'NM_DOADOR', 'NM_DOADOR_RFB', 'VR_RECEITA', 'DT_RECEITA'];
+const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'NR_CPF_CNPJ_FORNECEDOR', 'NM_FORNECEDOR', 'NM_FORNECEDOR_RFB', 'VR_DESPESA_CONTRATADA'];
 const DETALHE = ['ANO_ELEICAO', 'NR_TURNO', 'SG_UF', 'CD_MUNICIPIO', 'NR_ZONA', 'CD_CARGO', 'QT_APTOS', 'QT_COMPARECIMENTO',
-  'QT_ABSTENCOES', 'QT_VOTOS_BRANCOS', 'QT_VOTOS_NULOS'];
+  'QT_ABSTENCOES', 'QT_VOTOS_BRANCOS', 'QT_VOTOS_NULOS', 'QT_VOTOS_LEGENDA_VALIDOS'];
+const PAGA = [...ID, 'DS_ORIGEM_DESPESA', 'VR_PAGTO_DESPESA'];
+const ELEITOR = ['ANO_ELEICAO', 'SG_UF', 'CD_MUNICIPIO', 'NR_ZONA', 'NR_SECAO', 'DS_GENERO', 'DS_FAIXA_ETARIA',
+  'DS_GRAU_ESCOLARIDADE', 'QT_ELEITORES_PERFIL'];
+const eleitor = (mun, ...perfil) => ['2022', 'PB', mun, '1', '10', ...perfil];
 const detalhe = (turno, mun, cargo, ...n) => ['2022', turno, 'PB', mun, '1', cargo, ...n];
 
 const ZIPS = {
   'consulta-cand-2022.zip': { 'consulta_cand_2022_PB.csv': CANDIDATOS_PB, 'consulta_cand_2022_BRASIL.csv': CANDIDATOS_BRASIL },
   'bem-candidato-2022.zip': {
-    'bem_candidato_2022_PB.csv': [BENS, ['2022', 'PB', '150', '1.000.000,00'], ['2022', 'PB', '150', '250000,00'], ['2022', 'PB', '160', '80000,00']],
-    'bem_candidato_2022_BRASIL.csv': [BENS, ['2022', 'BR', '900', '3000000,00'], ['2022', 'PB', '150', '999,00']],
+    'bem_candidato_2022_PB.csv': [BENS, ['2022', 'PB', '150', 'Casa', '1.000.000,00'], ['2022', 'PB', '150', 'Veículo automotor terrestre', '250000,00'],
+      ['2022', 'PB', '160', 'Terreno', '80000,00']],
+    'bem_candidato_2022_BRASIL.csv': [BENS, ['2022', 'BR', '900', 'Casa', '3000000,00'], ['2022', 'PB', '150', 'Casa', '999,00']],
   },
   'prestacao-contas-2022.zip': {
     'receitas_candidatos_2022_PB.csv': [RECEITA,
-      [...pb('1', '3', '150', '40'), 'Fundo Especial', 'Recursos de partido político', '1', 'PART', '#NULO#', '2000000,00'],
-      [...pb('1', '3', '150', '40'), 'Outros Recursos', 'Recursos de pessoas físicas', '111', 'EMPRESARIO', 'EMPRESARIO RICO', '50000,00'],
-      [...pb('1', '6', '160', '1234'), 'Fundo Especial', 'Recursos de partido político', '2', 'OUTRO', '#NULO#', '300000,00'],
-      [...pb('1', '6', '160', '1234'), 'Outros Recursos', 'Recursos de pessoas físicas', '111', 'EMPRESARIO', 'EMPRESARIO RICO', '10000,00'],
-      [...pb('1', '6', '160', '1234'), 'Outros Recursos', 'Recursos próprios', '9', 'ZÉ', 'ZÉ', '5000,00'],
+      [...pb('1', '3', '150', '40'), 'Fundo Especial', 'Recursos de partido político', '1', 'PART', '#NULO#', '2000000,00', '20/08/2022'],
+      [...pb('1', '3', '150', '40'), 'Outros Recursos', 'Recursos de pessoas físicas', '111', 'EMPRESARIO', 'EMPRESARIO RICO', '50000,00', '05/09/2022'],
+      [...pb('1', '6', '160', '1234'), 'Fundo Especial', 'Recursos de partido político', '2', 'OUTRO', '#NULO#', '300000,00', '22/08/2022'],
+      [...pb('1', '6', '160', '1234'), 'Outros Recursos', 'Recursos de pessoas físicas', '111', 'EMPRESARIO', 'EMPRESARIO RICO', '10000,00', '23/08/2022'],
+      [...pb('1', '6', '160', '1234'), 'Outros Recursos', 'Recursos próprios', '9', 'ZÉ', 'ZÉ', '5000,00', '#NULO#'],
     ],
     'receitas_candidatos_doador_originario_2022_PB.csv': [RECEITA],
-    'despesas_contratadas_candidatos_2022_PB.csv': [DESPESA,
-      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '1500000,00'],
-      [...pb('1', '6', '160', '1234'), 'Despesas com pessoal', '200000,00'],
+    'despesas_pagas_candidatos_2022_PB.csv': [PAGA,
+      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '1200000,00'],
       [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '15000,00'],
+    ],
+    'despesas_contratadas_candidatos_2022_PB.csv': [DESPESA,
+      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '55', 'GRAFICA', 'GRAFICA DO POVO LTDA', '1500000,00'],
+      [...pb('1', '6', '160', '1234'), 'Despesas com pessoal', '66', 'ASSESSOR', '#NULO#', '200000,00'],
+      [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '160', 'OUTRO', '#NULO#', '15000,00'],
+    ],
+  },
+  'perfil-eleitor-secao-2022-PB.zip': {
+    'perfil_eleitor_secao_2022_PB.csv': [ELEITOR,
+      eleitor('20516', 'FEMININO', '21 a 24 anos', 'SUPERIOR COMPLETO', '300000'),
+      eleitor('20516', 'MASCULINO', '60 a 64 anos', 'ANALFABETO', '300000'),
+      eleitor('19305', 'FEMININO', '35 a 39 anos', 'ENSINO MÉDIO COMPLETO', '300000'),
     ],
   },
   'detalhe-munzona-2022.zip': {
     'detalhe_votacao_munzona_2022_PB.csv': [DETALHE,
-      detalhe('1', '20516', '3', '600000', '480000', '120000', '9000', '12000'),
-      detalhe('1', '19305', '3', '300000', '250000', '50000', '4000', '6000'),
-      detalhe('2', '20516', '3', '600000', '470000', '130000', '7000', '15000'),
+      detalhe('1', '20516', '3', '600000', '480000', '120000', '9000', '12000', '0'),
+      detalhe('1', '19305', '3', '300000', '250000', '50000', '4000', '6000', '0'),
+      detalhe('2', '20516', '3', '600000', '470000', '130000', '7000', '15000', '0'),
+      detalhe('1', '20516', '6', '600000', '480000', '120000', '20000', '25000', '30000'),
     ],
-    'detalhe_votacao_munzona_2022_BRASIL.csv': [DETALHE, detalhe('1', '20516', '1', '600000', '480000', '120000', '3000', '8000')],
+    'detalhe_votacao_munzona_2022_BRASIL.csv': [DETALHE, detalhe('1', '20516', '1', '600000', '480000', '120000', '3000', '8000', '0')],
   },
 };
 
