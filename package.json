@@ -9,6 +9,7 @@
     "tabela": "node scripts/gerar-tabela-tse.mjs",
     "dados": "npm run malha && npm run tabela",
     "eleicoes": "node scripts/gerar-dados.mjs",
+    "analises": "node scripts/gerar-analises.mjs",
     "dev": "npx --yes serve public -l 5173",
     "test": "node --test 'test/**/*.test.mjs'"
   },

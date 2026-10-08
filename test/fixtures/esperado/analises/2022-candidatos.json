@@ -1,0 +1,44 @@
+{
+ "ano": "2022",
+ "c": {
+  "150": {
+   "g": "MASCULINO",
+   "r": "BRANCA",
+   "i": 60,
+   "e": "SUPERIOR COMPLETO",
+   "o": "GOVERNADOR",
+   "re": 1,
+   "s": "ELEITO",
+   "p": "PART",
+   "b": 1250000
+  },
+  "151": {
+   "g": "FEMININO",
+   "r": "PARDA",
+   "i": 52,
+   "e": "SUPERIOR COMPLETO",
+   "o": "PROFESSOR",
+   "s": "NÃO ELEITO",
+   "p": "PART"
+  },
+  "160": {
+   "g": "FEMININO",
+   "r": "PRETA",
+   "e": "ENSINO MÉDIO COMPLETO",
+   "o": "COMERCIANTE",
+   "s": "ELEITO POR QP",
+   "p": "OUTRO",
+   "b": 80000
+  },
+  "900": {
+   "g": "MASCULINO",
+   "r": "PARDA",
+   "i": 77,
+   "e": "SUPERIOR COMPLETO",
+   "o": "PRESIDENTE",
+   "s": "2º TURNO",
+   "p": "PART",
+   "b": 3000000
+  }
+ }
+}
