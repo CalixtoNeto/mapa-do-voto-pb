@@ -25,10 +25,11 @@ const CANDIDATOS_BRASIL = [CADASTRO,
 ];
 const BENS = ['ANO_ELEICAO', 'SG_UF', 'SQ_CANDIDATO', 'DS_TIPO_BEM_CANDIDATO', 'VR_BEM_CANDIDATO'];
 const RECEITA = [...ID, 'DS_FONTE_RECEITA', 'DS_ORIGEM_RECEITA', 'NR_CPF_CNPJ_DOADOR', 'NM_DOADOR', 'NM_DOADOR_RFB', 'VR_RECEITA', 'DT_RECEITA'];
-const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'NR_CPF_CNPJ_FORNECEDOR', 'NM_FORNECEDOR', 'NM_FORNECEDOR_RFB', 'VR_DESPESA_CONTRATADA'];
+const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'NR_CPF_CNPJ_FORNECEDOR', 'NM_FORNECEDOR', 'NM_FORNECEDOR_RFB', 'VR_DESPESA_CONTRATADA',
+  'SQ_PRESTADOR_CONTAS'];
 const DETALHE = ['ANO_ELEICAO', 'NR_TURNO', 'SG_UF', 'CD_MUNICIPIO', 'NR_ZONA', 'CD_CARGO', 'QT_APTOS', 'QT_COMPARECIMENTO',
   'QT_ABSTENCOES', 'QT_VOTOS_BRANCOS', 'QT_VOTOS_NULOS', 'QT_VOTOS_LEGENDA_VALIDOS'];
-const PAGA = [...ID, 'DS_ORIGEM_DESPESA', 'VR_PAGTO_DESPESA'];
+const PAGA = ['ANO_ELEICAO', 'SG_UF', 'SQ_PRESTADOR_CONTAS', 'DS_ORIGEM_DESPESA', 'VR_PAGTO_DESPESA'];
 const ELEITOR = ['ANO_ELEICAO', 'SG_UF', 'CD_MUNICIPIO', 'NR_ZONA', 'NR_SECAO', 'DS_GENERO', 'DS_FAIXA_ETARIA',
   'DS_GRAU_ESCOLARIDADE', 'QT_ELEITORES_PERFIL'];
 const eleitor = (mun, ...perfil) => ['2022', 'PB', mun, '1', '10', ...perfil];
@@ -51,13 +52,13 @@ const ZIPS = {
     ],
     'receitas_candidatos_doador_originario_2022_PB.csv': [RECEITA],
     'despesas_pagas_candidatos_2022_PB.csv': [PAGA,
-      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '1200000,00'],
-      [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '15000,00'],
+      ['2022', 'PB', '9150', 'Publicidade por adesivos', '1200000,00'],
+      ['2022', 'PB', '9160', 'Doações financeiras a outros candidatos/partidos', '15000,00'],
     ],
     'despesas_contratadas_candidatos_2022_PB.csv': [DESPESA,
-      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '55', 'GRAFICA', 'GRAFICA DO POVO LTDA', '1500000,00'],
-      [...pb('1', '6', '160', '1234'), 'Despesas com pessoal', '66', 'ASSESSOR', '#NULO#', '200000,00'],
-      [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '160', 'OUTRO', '#NULO#', '15000,00'],
+      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '55', 'GRAFICA', 'GRAFICA DO POVO LTDA', '1500000,00', '9150'],
+      [...pb('1', '6', '160', '1234'), 'Despesas com pessoal', '66', 'ASSESSOR', '#NULO#', '200000,00', '9160'],
+      [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '160', 'OUTRO', '#NULO#', '15000,00', '9160'],
     ],
   },
   'perfil-eleitor-secao-2022-PB.zip': {
