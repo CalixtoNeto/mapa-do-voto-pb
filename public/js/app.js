@@ -1,6 +1,6 @@
 // Interface: Preact + htm, mapa em Canvas 2D.
-// startApp é chamado por main.js depois que a malha e a tabela TSE→IBGE são carregadas.
-function startApp(TOPO) {
+// startApp é chamado por main.js depois que a malha é carregada; AN são as análises (js/analises.mjs).
+function startApp(TOPO, AN) {
 const { html, render, useState, useEffect, useMemo, useRef } = htmPreact;
 const NORM = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const UF = 'PB', UF_NOME = 'Paraíba', N_MUN = 223;
@@ -96,6 +96,16 @@ const avisoComparacao = ({ ant, rec }) => ant.cargo !== rec.cargo
   : ant.turno !== rec.turno
     ? `Atenção: você está comparando turnos diferentes (${ant.turno}º e ${rec.turno}º). No 2º turno restam poucos candidatos e os votos se redistribuem, o que gera distorções. O ideal é comparar o mesmo turno.`
     : '';
+// ---------- Análises: como este site identifica candidatos e lugares ----------
+const CFG = {
+  chaveDe: c => c.key.split('|')[3], votosDe: c => c.mun, totDe: (ds, c) => ds.tot[c.ano + '|' + c.turno + '|' + c.cargo] || {},
+  lugares: () => MUNIS.map(m => m.id), lugarNome: 'município', lugaresNome: 'municípios', regiao: 'na Paraíba',
+  foraDasFinancas: c => c.cargo === '1' ? 'A campanha de presidente é nacional e a prestação de contas dela não entra neste site: os votos aqui são só os da Paraíba.' : '',
+  ehMajoritario: c => c.cargo === '3' || c.cargo === '5',
+  cargoPar: { '6': '7', '7': '6', '3': '5', '5': '3' }, nomeDoCargo: CARGO_NOMES,
+};
+const PAINEL = AN.criarPainelDoCandidato(CFG), Panorama = AN.criarPanorama(CFG);
+const CAMADAS = [['vencedor', 'Quem venceu'], ['abstencao', 'Abstenção'], ['brancos', 'Brancos'], ['nulos', 'Nulos']];
 const lerJson = async u => { const r = await fetch(u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u); return r.json(); };
 
 // ---------- Mapa (Canvas 2D) ----------
@@ -143,7 +153,8 @@ function MapCanvas({ view, metric, selected, onSelect, hover, onHover, classes, 
     const n = classes ? classes.b.length + 1 : 0;
     for (const m of MUNIS) {
       let fill = zero;
-      if (view && modoVar) { if ((view.votos[m.id] || 0) > 0) fill = div[modoVar === 'pp' ? binVar(view.var[m.id] || 0) : binRel(view.rel[m.id] || 0)]; }
+      if (view && view.cor) { const k = view.cor[m.id]; if (k != null) fill = v('--s' + k); }
+      else if (view && modoVar) { if ((view.votos[m.id] || 0) > 0) fill = div[modoVar === 'pp' ? binVar(view.var[m.id] || 0) : binRel(view.rel[m.id] || 0)]; }
       else if (view) { const val = metricOf(view, m.id, metric); const cl = classOf(val, classes.b); if (cl >= 0) fill = ramp[rampIndex(cl, n)]; }
       ctx.fillStyle = fill; ctx.fill(m.path, 'evenodd');
     }
@@ -210,7 +221,7 @@ function MapCanvas({ view, metric, selected, onSelect, hover, onHover, classes, 
   const zoomed = tf.current.z > 1.001;
   return html`<div class="map" ref=${wrap}>
     <canvas ref=${cv} style=${`width:${size.w}px;height:${size.h}px;touch-action:${zoomed ? 'none' : 'pan-y'}`}
-      role="img" aria-label=${view ? `Mapa de votos de ${titleCase(view.urna)} por município da ${UF_NOME}` : `Mapa dos municípios da ${UF_NOME}`}
+      role="img" aria-label=${view && view.rotulo ? view.rotulo : view ? `Mapa de votos de ${titleCase(view.urna)} por município da ${UF_NOME}` : `Mapa dos municípios da ${UF_NOME}`}
       onPointerDown=${onDown} onPointerMove=${onMove} onPointerUp=${onUp} onPointerCancel=${onUp}
       onPointerLeave=${e => { if (e.pointerType === 'mouse') onHover(null); }}
       onDblClick=${e => zoomAt(2, ...local(e))}></canvas>
@@ -425,6 +436,48 @@ function Fonte({ item }) {
   </section>`;
 }
 
+// ---------- Panorama do cargo: mapa de quem venceu e do comparecimento ----------
+function LegendaPanorama({ camada, setCamada, classes, vence, nomeDe, temComparecimento }) {
+  const seg = html`<div class="seg rolavel" role="radiogroup" aria-label="O que o mapa mostra">
+    ${CAMADAS.map(([id, nome]) => html`<button type="button" role="radio" aria-checked=${camada === id} onClick=${() => setCamada(id)}>${nome}</button>`)}</div>`;
+  if (camada === 'vencedor') {
+    const outros = vence.contagem.slice(3);
+    return html`<div class="legend">${seg}<ul>
+      ${vence.contagem.slice(0, 3).map(([k, n], i) => html`<li><i style=${`background:var(--s${i + 1})`}></i>${nomeDe(k)} · ${n} ${n === 1 ? 'município' : 'municípios'}</li>`)}
+      ${outros.length > 0 && html`<li><i style="background:var(--s0)"></i>Outros ${outros.length} candidatos · ${outros.reduce((s, [, n]) => s + n, 0)} municípios</li>`}</ul>
+      <p class="hint">Cor do candidato mais votado em cada município, neste cargo e turno.</p></div>`;
+  }
+  if (!temComparecimento) return html`<div class="legend">${seg}<p class="hint">O comparecimento desta eleição ainda não foi gerado para o site.</p></div>`;
+  const n = classes.b.length + 1, base = camada === 'abstencao' ? 'dos eleitores aptos' : 'de quem compareceu';
+  return html`<div class="legend">${seg}<ul>${Array.from({ length: n }, (_, i) => {
+      const lo = i === 0 ? classes.min : classes.b[i - 1], hi = i === n - 1 ? classes.max : classes.b[i];
+      return html`<li><i style=${`background:var(--r${rampIndex(i, n)})`}></i>${pct(lo, 1)}–${pct(hi, 1)}</li>`; })}</ul>
+    <p class="hint">${camada === 'abstencao' ? 'Abstenção' : camada === 'brancos' ? 'Votos brancos' : 'Votos nulos'} em % ${base}${camada !== 'abstencao' ? ', neste cargo' : ''}.</p></div>`;
+}
+
+function CardPanorama({ id, pinned, onClear, vence, cands, comp }) {
+  if (!id) return html`<p class="hint">Toque ou clique num município para ver os números.</p>`;
+  const c = cands.find(x => x.key === vence.porLugar[id]), n = comp && comp[id];
+  const totalDoLugar = cands.reduce((s, x) => s + (x.mun[id] || 0), 0);
+  return html`<div class=${'muni' + (pinned ? ' pinned' : '')} aria-live="polite">
+    <div class="muni-head"><h3>${BYID[id].name}</h3>${pinned && html`<button type="button" class="link" onClick=${onClear}>Fechar</button>`}</div>
+    ${c && html`<p class="hint">Venceu: <strong>${titleCase(c.urna)}</strong> (${c.partido}) com ${nf.format(c.mun[id])} votos, ${pct(c.mun[id] / totalDoLugar)} dos nominais.</p>`}
+    ${n && html`<dl><div><dt>Abstenção</dt><dd>${pct((n[0] - n[1]) / n[0])}</dd></div>
+      <div><dt>Brancos</dt><dd>${n[1] ? pct(n[2] / n[1]) : '—'}</dd></div><div><dt>Nulos</dt><dd>${n[1] ? pct(n[3] / n[1]) : '—'}</dd></div></dl>`}
+  </div>`;
+}
+
+function StatsPanorama({ comp }) {
+  if (!comp) return null;
+  const s = AN.somaDoComparecimento(comp);
+  return html`<dl class="stats">
+    <div><dt>Eleitores aptos</dt><dd>${nf.format(s.aptos)}</dd></div>
+    <div><dt>Abstenção</dt><dd>${pct(s.abstencao / s.aptos)}</dd></div>
+    <div><dt>Brancos</dt><dd>${pct(s.brancos / s.comparecimento)}</dd></div>
+    <div><dt>Nulos</dt><dd>${pct(s.nulos / s.comparecimento)}</dd></div>
+  </dl>`;
+}
+
 const rotuloEleicao = e => `${e.ano} · ${e.turno}º turno${e.final ? '' : ' (parcial)'}`;
 
 // ---------- App ----------
@@ -438,6 +491,9 @@ function App() {
   const mapRef = useRef();
   const [pessoas, setPessoas] = useState({}), [comp, setComp] = useState(null), [dsB, setDsB] = useState(null);
   const [varModo, setVarModo] = useState(ls.get('mv.varmodo') || 'rel');
+  const [modo, setModo] = useState(ls.get('mv.modo') || 'candidato'), [camada, setCamada] = useState('vencedor');
+  useEffect(() => { ls.set('mv.modo', modo); }, [modo]);
+  const indiceAnalises = AN.usarIndiceDasAnalises('data/eleicoes');
   useEffect(() => { ls.set('mv.varmodo', varModo); }, [varModo]);
   useEffect(() => { lerJson('data/eleicoes/pessoas.json').then(setPessoas).catch(() => { }); }, []);
 
@@ -469,6 +525,7 @@ function App() {
     return () => { vivo = false; };
   }, [item && item.base + item.arquivo]);
 
+  const an = AN.usarAnalisesDaEleicao('data/eleicoes', indiceAnalises, item && item.ano, item && item.turno);
   const shown = hover || selected;
   // votos por local de votação: baixados só ao tocar num município
   useEffect(() => {
@@ -504,6 +561,26 @@ function App() {
   useEffect(() => { if (eleicao && cargo) ls.set('mv.last', { e: eleicao, c: cargo, k: candKey }); }, [eleicao, cargo, candKey]);
 
   const classes = useMemo(() => view ? quantBreaks(MUNIS.map(m => metricOf(view, m.id, metric))) : null, [view, metric]);
+  const linhasDoCargo = useMemo(() => an.financas ? AN.linhasFinanceiras(cands, an.financas, CFG.chaveDe) : [], [cands, an.financas]);
+
+  // ---- panorama do cargo ----
+  const panorama = modo === 'panorama' && !!ds && !!cargo;
+  const compCargo = an.comparecimento && an.comparecimento.cargos[cargo];
+  const vence = useMemo(() => {
+    if (!panorama) return null;
+    const v = AN.vencedores(cands, c => c.mun);
+    return { ...v, cores: AN.coresDosVencedores(v.contagem) };
+  }, [panorama, cands]);
+  const viewPanorama = useMemo(() => {
+    if (!panorama) return null;
+    const tk = ds.ano + '|' + ds.turno + '|' + cargo, rotulo = `Mapa: ${CAMADAS.find(c => c[0] === camada)[1].toLowerCase()} por município da ${UF_NOME}`;
+    if (camada === 'vencedor') return { rotulo, votos: ds.tot[tk] || {}, tot: {}, cor: Object.fromEntries(Object.entries(vence.porLugar).map(([id, k]) => [id, vence.cores[k]])) };
+    const c = AN.camadaDoComparecimento(camada, compCargo);
+    return { rotulo, votos: Object.fromEntries(Object.entries(c).map(([id, x]) => [id, x[0]])), tot: Object.fromEntries(Object.entries(c).map(([id, x]) => [id, x[1]])) };
+  }, [panorama, ds, cargo, camada, vence, compCargo]);
+  const classesPanorama = useMemo(() => viewPanorama && !viewPanorama.cor ? quantBreaks(MUNIS.map(m => metricOf(viewPanorama, m.id, 'pct'))) : null, [viewPanorama]);
+  const escolher = c => { setCargo(c.cargo); setCandKey(c.key); setModo('candidato'); setSelected(null); setComp(null); };
+  const nomeDoCand = k => { const c = cands.find(x => x.key === k); return c ? titleCase(c.urna) : ''; };
 
   // ---- comparação com outra eleição do mesmo candidato ----
   const entradas = useMemo(() => view ? (pessoas[NORM(view.nome || view.urna)] || []).map(([ano, turno, cargo, nr, total, pc, pos]) => ({ ano, turno, cargo, nr, total, pct: pc, pos })) : [], [view, pessoas]);
@@ -545,31 +622,47 @@ function App() {
       ${hasData && html`<div class="chips" role="radiogroup" aria-label="Cargo">
         ${cargos.map(([cd, nm]) => html`<button type="button" role="radio" aria-checked=${cd === cargo} onClick=${() => { setCargo(cd); setSelected(null); setComp(null); }}>${cargoLabel(nm)}</button>`)}
       </div>
-      <${CandidatePicker} cands=${cands} value=${candKey} onPick=${k => { setCandKey(k); setSelected(null); setComp(null); }} />`}
+      <div class="seg modo" role="radiogroup" aria-label="O que ver">
+        <button type="button" role="radio" aria-checked=${modo === 'candidato'} onClick=${() => { setModo('candidato'); setSelected(null); }}>Candidato</button>
+        <button type="button" role="radio" aria-checked=${modo === 'panorama'} onClick=${() => { setModo('panorama'); setSelected(null); setComp(null); }}>Panorama do cargo</button>
+      </div>
+      <${CandidatePicker} cands=${cands} value=${candKey} onPick=${k => { setCandKey(k); setModo('candidato'); setSelected(null); setComp(null); }} />`}
     </section>`}
 
     <section class="stage" ref=${mapRef}>
-      ${view ? html`<div class="who">
+      ${panorama ? html`<div class="who">
+          <h1>${cargoLabel((cargos.find(c => c[0] === cargo) || [cargo, CARGO_NOMES[cargo]])[1])}</h1>
+          <p>Panorama · ${ds.ano}${ds.turno !== '1' ? ' (2º turno)' : ''} · ${cands.length} candidatos com voto</p>
+        </div>`
+      : view ? html`<div class="who">
           <h1>${titleCase(view.urna)}</h1>
           <p>${view.nr} · ${view.partido} · ${cargoLabel(view.cargoNome)} · ${view.ano}${view.turno !== '1' ? ` (${view.turno}º turno)` : ''}</p>
           <p class="sub">${view.posicao ? `${view.posicao}º mais votado entre ${view.nCands}` : ''}${sitTxt ? ` · ${sitTxt}` : ''}</p>
         </div>`
       : html`<div class="who empty"><h1>${hasData ? 'Escolha um candidato' : 'Votos por município'}</h1>
-          <p>${erro ? erro : carregando || !indice ? 'Carregando os resultados…' : hasData ? 'Busque pelo nome de urna, número ou partido.' : `Veja onde cada candidato foi votado nos ${N_MUN} municípios da ${UF_NOME}.`}</p></div>`}
-      ${comp && !cmp && html`<p class="hint">Carregando a outra eleição…</p>`}
-      ${cmp && html`<p class="cmp-bar" role="note"><span>Comparando <strong>${cmp.ant.ano}${cmp.ant.turno !== '1' ? ' · 2º turno' : ''}</strong> (${sentence(cmp.ant.cargoNome)}) com <strong>${cmp.rec.ano}${cmp.rec.turno !== '1' ? ' · 2º turno' : ''}</strong> (${sentence(cmp.rec.cargoNome)})</span><button type="button" class="link" onClick=${() => setComp(null)}>Sair da comparação</button></p>`}
-      ${cmp && avisoComparacao(cmp) && html`<p class="aviso" role="alert">${avisoComparacao(cmp)}</p>`}
-      <${MapCanvas} view=${viewMapa} metric=${metric} selected=${selected} onSelect=${setSelected} hover=${hover} onHover=${setHover} classes=${classes} modoVar=${cmp ? varModo : false} />
-      ${view && html`<${Legend} classes=${classes} metric=${metric} setMetric=${setMetric} view=${view} modoVar=${cmp ? varModo : false} varModo=${varModo} setVarModo=${setVarModo} />`}
-      <${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} det=${det} linha=${cmp && shown ? { ...(cmp.rows.find(r => r.id === shown) || { vAnt: 0, vRec: 0, d: 0, dp: 0 }), ant: cmp.ant, rec: cmp.rec } : null} />
+          <p>${erro ? erro : carregando || !indice ? 'Carregando os resultados…' : hasData ? 'Busque pelo nome de urna, número ou partido, ou veja o panorama do cargo.' : `Veja onde cada candidato foi votado nos ${N_MUN} municípios da ${UF_NOME}.`}</p></div>`}
+      ${!panorama && comp && !cmp && html`<p class="hint">Carregando a outra eleição…</p>`}
+      ${!panorama && cmp && html`<p class="cmp-bar" role="note"><span>Comparando <strong>${cmp.ant.ano}${cmp.ant.turno !== '1' ? ' · 2º turno' : ''}</strong> (${sentence(cmp.ant.cargoNome)}) com <strong>${cmp.rec.ano}${cmp.rec.turno !== '1' ? ' · 2º turno' : ''}</strong> (${sentence(cmp.rec.cargoNome)})</span><button type="button" class="link" onClick=${() => setComp(null)}>Sair da comparação</button></p>`}
+      ${!panorama && cmp && avisoComparacao(cmp) && html`<p class="aviso" role="alert">${avisoComparacao(cmp)}</p>`}
+      <${MapCanvas} view=${panorama ? viewPanorama : viewMapa} metric=${panorama ? 'pct' : metric} selected=${selected} onSelect=${setSelected} hover=${hover} onHover=${setHover} classes=${panorama ? classesPanorama : classes} modoVar=${!panorama && cmp ? varModo : false} />
+      ${panorama && html`<${LegendaPanorama} camada=${camada} setCamada=${setCamada} classes=${classesPanorama} vence=${vence} nomeDe=${nomeDoCand} temComparecimento=${!!compCargo} />`}
+      ${panorama && html`<${CardPanorama} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} vence=${vence} cands=${cands} comp=${compCargo} />`}
+      ${!panorama && view && html`<${Legend} classes=${classes} metric=${metric} setMetric=${setMetric} view=${view} modoVar=${cmp ? varModo : false} varModo=${varModo} setVarModo=${setVarModo} />`}
+      ${!panorama && html`<${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} det=${det} linha=${cmp && shown ? { ...(cmp.rows.find(r => r.id === shown) || { vAnt: 0, vRec: 0, d: 0, dp: 0 }), ant: cmp.ant, rec: cmp.rec } : null} />`}
     </section>
 
     <aside class="side">
-      ${cmp ? html`<${ComparaStats} cmp=${cmp} />` : html`<${Stats} view=${view} />`}
-      ${entradas.length > 1 && html`<${Trajetoria} entradas=${entradas} view=${view} comp=${comp} onComparar=${e => { setComp(c => c && c.ano === e.ano && c.turno === e.turno && c.cargo === e.cargo && c.nr === e.nr ? null : e); setSelected(null); }} onSair=${() => setComp(null)} />`}
-      ${cmp ? html`<${ComparaRanking} cmp=${cmp} selected=${selected} onSelect=${selectFromList} />` : html`<${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${selectFromList} />`}
+      ${panorama ? html`<${StatsPanorama} comp=${compCargo} />
+        <${Panorama} ds=${ds} cargo=${cargo} turno=${ds.turno} ano=${ds.ano} financas=${an.financas} perfis=${an.perfis} selecionado=${candKey} onPick=${escolher} />`
+      : html`${cmp ? html`<${ComparaStats} cmp=${cmp} />` : html`<${Stats} view=${view} />`}
+        ${view && !cmp && html`<${PAINEL.Concentracao} cand=${cands.find(c => c.key === candKey)} />`}
+        ${view && !cmp && html`<${PAINEL.Dinheiro} cand=${cands.find(c => c.key === candKey)} financas=${an.financas} ano=${view.ano} linhasDoCargo=${linhasDoCargo} />`}
+        ${entradas.length > 1 && html`<${Trajetoria} entradas=${entradas} view=${view} comp=${comp} onComparar=${e => { setComp(c => c && c.ano === e.ano && c.turno === e.turno && c.cargo === e.cargo && c.nr === e.nr ? null : e); setSelected(null); }} onSair=${() => setComp(null)} />`}
+        ${cmp ? html`<${ComparaRanking} cmp=${cmp} selected=${selected} onSelect=${selectFromList} />` : html`<${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${selectFromList} />`}
+        ${view && !cmp && html`<${PAINEL.QuemE} cand=${cands.find(c => c.key === candKey)} perfis=${an.perfis} patrimonio=${indiceAnalises.patrimonio} />`}
+        ${view && !cmp && html`<${PAINEL.Dobradinhas} cand=${cands.find(c => c.key === candKey)} ds=${ds} onPick=${escolher} />`}`}
       <${Fonte} item=${item} />
-      <p class="credits">Fontes: TSE, API de resultados (ciclo atual) e Portal de Dados Abertos (histórico). Malha municipal IBGE, simplificada.</p>
+      <p class="credits">Fontes: TSE, API de resultados (ciclo atual) e Portal de Dados Abertos (histórico, cadastro e bens dos candidatos, prestação de contas e comparecimento). Malha municipal IBGE, simplificada.</p>
     </aside>
   </div>`;
 }
