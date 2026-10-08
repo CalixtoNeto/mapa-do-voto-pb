@@ -1,6 +1,7 @@
 // API de resultados do TSE: guarda só o ciclo atual e o anterior, com um arquivo por município e cargo.
 // Serve para completar o que o CSV ainda não tem, como um 2º turno recém-apurado.
-import { API, getJson, paralelo, pad } from '../lib/tse.mjs';
+import { API, getJson, pad } from '../lib/tse.mjs';
+import { paralelo } from '../lib/paralelo.mjs';
 import { inteiro } from '../lib/csv.mjs';
 import { apuracaoDoTurno, somarVoto, chaveDoCargo } from '../eleicao/apuracao.mjs';
 import { UF, CARGOS_DO_SITE, CARGOS_COM_2_TURNO } from '../eleicao/config.mjs';

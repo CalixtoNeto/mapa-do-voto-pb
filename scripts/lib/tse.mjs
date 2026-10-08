@@ -1,5 +1,5 @@
 // Utilitários para falar com o TSE sem sobrecarregar os servidores:
-// poucas requisições em paralelo, retentativa com espera e cache em disco dos arquivos grandes.
+// retentativa com espera e cache em disco dos arquivos grandes.
 import { createReadStream, createWriteStream, existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { Readable } from 'node:stream';
@@ -26,15 +26,6 @@ export async function getJson(url, { tentativas = 4, esperaMs = 1500 } = {}) {
     }
     await dormir(esperaMs * i);
   }
-}
-
-// Executa fn sobre os itens com no máximo `limite` chamadas simultâneas.
-export async function paralelo(itens, limite, fn) {
-  const saida = new Array(itens.length); let prox = 0;
-  await Promise.all(Array.from({ length: Math.min(limite, itens.length) }, async () => {
-    while (prox < itens.length) { const i = prox++; saida[i] = await fn(itens[i], i); }
-  }));
-  return saida;
 }
 
 // Baixa um arquivo grande para o disco (reaproveita o que já foi baixado). Devolve false se o TSE responder 404.
@@ -94,3 +85,9 @@ function entregadorDeLinhas(aoLinha) {
 }
 
 export const pad = (n, d) => String(n).padStart(d, '0');
+
+// Caso comum: um único CSV, que tem de existir.
+export async function lerCsvDoZip(zip, padrao, aoLinha) {
+  const [achou] = await lerCsvsDoZip(zip, [{ padrao, aoLinha }]);
+  if (!achou) throw new Error(`Nenhum arquivo ${padrao} dentro de ${zip}`);
+}
