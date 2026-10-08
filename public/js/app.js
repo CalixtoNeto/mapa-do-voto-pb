@@ -103,7 +103,7 @@ const CFG = {
   agrupar: (ano, porMunicipio) => porMunicipio, nomeDoLugar: id => BYID[id] ? BYID[id].name : id,
   foraDasFinancas: c => c.cargo === '1' ? 'A campanha de presidente é nacional e a prestação de contas dela não entra neste site: os votos aqui são só os da Paraíba.' : '',
   ehMajoritario: c => c.cargo === '3' || c.cargo === '5',
-  cargoPar: { '6': '7', '7': '6', '3': '5', '5': '3' }, nomeDoCargo: CARGO_NOMES,
+  nomeDoCargo: CARGO_NOMES,
 };
 const PAINEL = AN.criarPainelDoCandidato(CFG), Panorama = AN.criarPanorama(CFG);
 const CAMADAS = [['vencedor', 'Quem venceu'], ['abstencao', 'Abstenção'], ['brancos', 'Brancos'], ['nulos', 'Nulos']];
