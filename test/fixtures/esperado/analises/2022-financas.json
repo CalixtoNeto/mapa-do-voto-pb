@@ -13,7 +13,22 @@
      "Publicidade por adesivos",
      1500000
     ]
-   ]
+   ],
+   "doa": [
+    [
+     "EMPRESARIO RICO",
+     "pf",
+     50000
+    ]
+   ],
+   "nd": 1,
+   "fo": [
+    [
+     "GRAFICA DO POVO LTDA",
+     1500000
+    ]
+   ],
+   "nf": 1
   },
   "160": {
    "r": {
@@ -28,7 +43,22 @@
      "Despesas com pessoal",
      200000
     ]
-   ]
+   ],
+   "doa": [
+    [
+     "EMPRESARIO RICO",
+     "pf",
+     10000
+    ]
+   ],
+   "nd": 1,
+   "fo": [
+    [
+     "ASSESSOR",
+     200000
+    ]
+   ],
+   "nf": 1
   }
  },
  "doadores": [

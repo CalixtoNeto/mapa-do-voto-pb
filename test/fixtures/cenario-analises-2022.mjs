@@ -25,7 +25,7 @@ const CANDIDATOS_BRASIL = [CADASTRO,
 ];
 const BENS = ['ANO_ELEICAO', 'SG_UF', 'SQ_CANDIDATO', 'VR_BEM_CANDIDATO'];
 const RECEITA = [...ID, 'DS_FONTE_RECEITA', 'DS_ORIGEM_RECEITA', 'NR_CPF_CNPJ_DOADOR', 'NM_DOADOR', 'NM_DOADOR_RFB', 'VR_RECEITA'];
-const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'VR_DESPESA_CONTRATADA'];
+const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'NR_CPF_CNPJ_FORNECEDOR', 'NM_FORNECEDOR', 'NM_FORNECEDOR_RFB', 'VR_DESPESA_CONTRATADA'];
 const DETALHE = ['ANO_ELEICAO', 'NR_TURNO', 'SG_UF', 'CD_MUNICIPIO', 'NR_ZONA', 'CD_CARGO', 'QT_APTOS', 'QT_COMPARECIMENTO',
   'QT_ABSTENCOES', 'QT_VOTOS_BRANCOS', 'QT_VOTOS_NULOS'];
 const detalhe = (turno, mun, cargo, ...n) => ['2022', turno, 'PB', mun, '1', cargo, ...n];
@@ -46,9 +46,9 @@ const ZIPS = {
     ],
     'receitas_candidatos_doador_originario_2022_PB.csv': [RECEITA],
     'despesas_contratadas_candidatos_2022_PB.csv': [DESPESA,
-      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '1500000,00'],
-      [...pb('1', '6', '160', '1234'), 'Despesas com pessoal', '200000,00'],
-      [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '15000,00'],
+      [...pb('1', '3', '150', '40'), 'Publicidade por adesivos', '55', 'GRAFICA', 'GRAFICA DO POVO LTDA', '1500000,00'],
+      [...pb('1', '6', '160', '1234'), 'Despesas com pessoal', '66', 'ASSESSOR', '#NULO#', '200000,00'],
+      [...pb('1', '6', '160', '1234'), 'Doações financeiras a outros candidatos/partidos', '160', 'OUTRO', '#NULO#', '15000,00'],
     ],
   },
   'detalhe-munzona-2022.zip': {

@@ -5,7 +5,7 @@ import { novasFinancas, resumoDasFinancas } from '../../scripts/analises/financa
 
 const ID = ['ANO_ELEICAO', 'SG_UF', 'SG_UE', 'CD_CARGO', 'SQ_CANDIDATO', 'NR_CANDIDATO'];
 const RECEITA = [...ID, 'DS_FONTE_RECEITA', 'DS_ORIGEM_RECEITA', 'NR_CPF_CNPJ_DOADOR', 'NM_DOADOR', 'NM_DOADOR_RFB', 'VR_RECEITA'];
-const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'VR_DESPESA_CONTRATADA'];
+const DESPESA = [...ID, 'DS_ORIGEM_DESPESA', 'NR_CPF_CNPJ_FORNECEDOR', 'NM_FORNECEDOR', 'NM_FORNECEDOR_RFB', 'VR_DESPESA_CONTRATADA'];
 const linha = campos => campos.map(c => `"${c}"`).join(';');
 const deputado = (uf = 'PB') => ['2022', uf, uf, '6', '150', '1234'];
 
@@ -35,8 +35,8 @@ test('ignora candidatos de outra UF e cargos fora do site', () => {
 
 test('despesas contratadas, separando os repasses', () => {
   const r = ler(leitorDeDespesas, DESPESA, [
-    [...deputado(), 'Publicidade por materiais impressos', '700,00'],
-    [...deputado(), 'Doações financeiras a outros candidatos/partidos', '300,00'],
+    [...deputado(), 'Publicidade por materiais impressos', '33', 'GRAF', 'GRAFICA LTDA', '700,00'],
+    [...deputado(), 'Doações financeiras a outros candidatos/partidos', '44', 'FULANO', '#NULO#', '300,00'],
   ]);
-  assert.deepEqual(r.c[150], { r: {}, d: 700, rep: 300, dc: [['Publicidade por materiais impressos', 700]] });
+  assert.deepEqual(r.c[150], { r: {}, d: 700, rep: 300, dc: [['Publicidade por materiais impressos', 700]], fo: [['GRAFICA LTDA', 700]], nf: 1 });
 });
