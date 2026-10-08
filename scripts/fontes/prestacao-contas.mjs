@@ -7,7 +7,7 @@ import { informado } from '../lib/texto.mjs';
 import { origemDaReceita, ehRepasse } from '../analises/receitas.mjs';
 import { novasFinancas, somarReceita, somarDespesa } from '../analises/financas.mjs';
 import { identificacao, ehDoAno } from '../analises/identificacao.mjs';
-import { candidatoDoSite, chaveDoCandidato } from '../analises/escopo.mjs';
+import { candidatoDasFinancas, chaveDoCandidato } from '../analises/escopo.mjs';
 import { UF, PASTA_DOWNLOADS } from '../eleicao/config.mjs';
 
 export async function financasViaCsv(ano) {
@@ -25,7 +25,7 @@ function leitorDoCandidato(ano, aoCandidato) {
   return porRegistro({
     aoRegistro: (campos, colunas) => {
       const candidato = identificacao(campos, colunas);
-      if (ehDoAno(candidato, ano) && candidatoDoSite(candidato)) aoCandidato(chaveDoCandidato(candidato), campos, colunas);
+      if (ehDoAno(candidato, ano) && candidatoDasFinancas(candidato)) aoCandidato(chaveDoCandidato(candidato), campos, colunas);
     },
   });
 }

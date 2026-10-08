@@ -653,7 +653,7 @@ function App() {
 
     <aside class="side">
       ${panorama ? html`<${StatsPanorama} comp=${compCargo} />
-        <${Panorama} ds=${ds} cargo=${cargo} turno=${ds.turno} ano=${ds.ano} financas=${an.financas} perfis=${an.perfis} selecionado=${candKey} onPick=${escolher} />`
+        <${Panorama} cands=${cands} ano=${ds.ano} financas=${an.financas} perfis=${an.perfis} selecionado=${candKey} onPick=${escolher} />`
       : html`${cmp ? html`<${ComparaStats} cmp=${cmp} />` : html`<${Stats} view=${view} />`}
         ${view && !cmp && html`<${PAINEL.Concentracao} cand=${cands.find(c => c.key === candKey)} />`}
         ${view && !cmp && html`<${PAINEL.Dinheiro} cand=${cands.find(c => c.key === candKey)} financas=${an.financas} ano=${view.ano} linhasDoCargo=${linhasDoCargo} />`}

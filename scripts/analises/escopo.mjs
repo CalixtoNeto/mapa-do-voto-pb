@@ -6,6 +6,9 @@ const ehPresidente = cargo => cargo === CARGOS.PRESIDENTE;
 
 export const candidatoDoSite = ({ uf, cargo }) => CARGOS_DO_SITE.includes(cargo) && (uf === UF || ehPresidente(cargo));
 
+// A prestação de contas do presidente está no arquivo nacional, que este site não lê.
+export const candidatoDasFinancas = candidatoDoSite;
+
 export const chaveDoCandidato = ({ sq }) => sq;
 
 export const chaveNoSite = candidato => candidato.key.split('|')[3];

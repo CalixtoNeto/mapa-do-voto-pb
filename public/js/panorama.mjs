@@ -63,8 +63,8 @@ function Redutos({ cfg, cands, selecionado, onPick }) {
 }
 
 export function criarPanorama(cfg) {
-  return function Panorama({ ds, cargo, turno, ano, financas, perfis, selecionado, onPick }) {
-    const cands = useMemo(() => ds.cands.filter(c => c.cargo === cargo && c.turno === turno), [ds, cargo, turno]);
+  // cands: os candidatos do cargo no turno mostrado, como o site os monta (com partido).
+  return function Panorama({ cands, ano, financas, perfis, selecionado, onPick }) {
     const eleito = c => ehEleito(c.sit || perfis?.c?.[cfg.chaveDe(c)]?.s);
     return html`<section class="analise" aria-labelledby="dc"><h2 id="dc">Dinheiro da campanha</h2>
         <${DinheiroDoCargo} cfg=${cfg} cands=${cands} financas=${financas} ano=${ano} selecionado=${selecionado} onPick=${onPick} eleito=${eleito} /></section>
