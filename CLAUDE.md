@@ -1,4 +1,4 @@
-# Mapa do voto · Paraíba
+# Mapa da política · Paraíba
 
 Site estático (`public/`) com dados gerados por `scripts/gerar-dados.mjs` a partir do TSE.
 

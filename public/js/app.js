@@ -429,11 +429,11 @@ function Stats({ view }) {
 
 function Fonte({ item }) {
   if (!item) return null;
-  const quando = item.atualizadoEm && item.fonte === 'api' ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
+  const quando = item.atualizadoEm ? new Date(item.atualizadoEm).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '';
   return html`<section class="source compact">
     <p>${item.fonte === 'api'
       ? html`<strong>API de resultados do TSE</strong> · ${item.final ? 'apuração concluída' : 'apuração em andamento'}${quando ? ` · atualizado em ${quando}` : ''}`
-      : html`<strong>Dados Abertos do TSE</strong> · votação nominal por município e zona${item.fonte === 'csv+api' ? ' · completado com a API de resultados' : ''} · ${item.final ? 'resultado final' : 'resultado parcial'}`}</p>
+      : html`<strong>Dados Abertos do TSE</strong> · <a href="https://dadosabertos.tse.jus.br/" target="_blank" rel="noopener">votação nominal por município e zona</a>${item.fonte === 'csv+api' ? ' · completado com a API de resultados' : ''} · ${item.final ? 'resultado final' : 'resultado parcial'}${quando ? ` · arquivo processado em ${quando}` : ''}`}</p>
   </section>`;
 }
 
@@ -477,6 +477,43 @@ function StatsPanorama({ comp }) {
     <div><dt>Brancos</dt><dd>${pct(s.brancos / s.comparecimento)}</dd></div>
     <div><dt>Nulos</dt><dd>${pct(s.nulos / s.comparecimento)}</dd></div>
   </dl>`;
+}
+
+// Equivalente em texto do mapa do panorama: o canvas não é lido por leitor de tela.
+function TabelaDoPanorama({ camada, vence, cands, comp }) {
+  const linhas = useMemo(() => {
+    if (camada !== 'vencedor') {
+      if (!comp) return null;
+      const c = AN.camadaDoComparecimento(camada, comp);
+      return MUNIS.map(m => { const [v, b] = c[m.id] || [0, 0]; return [m.name, b ? pct(v / b) : '—', nf.format(v), nf.format(b)]; });
+    }
+    return MUNIS.map(m => {
+      const c = cands.find(x => x.key === vence.porLugar[m.id]), total = cands.reduce((s, x) => s + (x.mun[m.id] || 0), 0);
+      return c ? [m.name, `${titleCase(c.urna)} (${c.partido})`, nf.format(c.mun[m.id]), pct(c.mun[m.id] / total)] : [m.name, '—', '—', '—'];
+    });
+  }, [camada, vence, cands, comp]);
+  if (!linhas) return null;
+  const nome = CAMADAS.find(c => c[0] === camada)[1];
+  const cab = camada === 'vencedor' ? ['Município', 'Mais votado', 'Votos', '% dos nominais']
+    : ['Município', `${nome} (%)`, nome, camada === 'abstencao' ? 'Eleitores aptos' : 'Compareceram'];
+  return html`<details class="tabela-mapa"><summary>Ver os dados do mapa em tabela (${MUNIS.length} municípios)</summary>
+    <div class="rolagem" tabindex="0" role="region" aria-label="Tabela do mapa"><table>
+      <caption>${nome} por município · ${UF_NOME}</caption>
+      <thead><tr>${cab.map(t => html`<th scope="col">${t}</th>`)}</tr></thead>
+      <tbody>${linhas.map(([mun, ...resto]) => html`<tr><th scope="row">${mun}</th>${resto.map(v => html`<td>${v}</td>`)}</tr>`)}</tbody>
+    </table></div></details>`;
+}
+
+// ---------- Aviso legal ----------
+// Do início da campanha ao último turno; inclua os próximos pleitos (confira as datas no calendário do TSE).
+const PERIODOS_ELEITORAIS = [['2026-08-16', '2026-10-25']];
+const emPeriodoEleitoral = (hoje = new Date().toISOString().slice(0, 10)) => PERIODOS_ELEITORAIS.some(([de, ate]) => hoje >= de && hoje <= ate);
+function AvisoLegal() {
+  return html`<footer class="aviso-legal">
+    ${emPeriodoEleitoral() && html`<p class="aviso" role="note">Período eleitoral: este site reorganiza dados oficiais já publicados. Não é propaganda, pesquisa eleitoral nem projeção de resultado.</p>`}
+    <p>Dados oficiais do TSE e do IBGE, reproduzidos como publicados, com cálculos próprios identificados. Conteúdo informativo, sem juízo sobre candidatos, partidos, eleitores ou fornecedores.</p>
+    <p><a href="metodologia.html">Metodologia</a> · <a href="correcoes.html">Correções e contato</a></p>
+  </footer>`;
 }
 
 const rotuloEleicao = e => `${e.ano} · ${e.turno}º turno${e.final ? '' : ' (parcial)'}`;
@@ -575,7 +612,7 @@ function App() {
   }, [panorama, cands]);
   const viewPanorama = useMemo(() => {
     if (!panorama) return null;
-    const tk = ds.ano + '|' + ds.turno + '|' + cargo, rotulo = `Mapa: ${CAMADAS.find(c => c[0] === camada)[1].toLowerCase()} por município da ${UF_NOME}`;
+    const tk = ds.ano + '|' + ds.turno + '|' + cargo, rotulo = `Mapa: ${CAMADAS.find(c => c[0] === camada)[1].toLowerCase()} por município da ${UF_NOME}. Os mesmos dados estão na tabela abaixo do mapa.`;
     if (camada === 'vencedor') return { rotulo, votos: ds.tot[tk] || {}, tot: {}, cor: Object.fromEntries(Object.entries(vence.porLugar).map(([id, k]) => [id, vence.cores[k]])) };
     const c = AN.camadaDoComparecimento(camada, compCargo);
     return { rotulo, votos: Object.fromEntries(Object.entries(c).map(([id, x]) => [id, x[0]])), tot: Object.fromEntries(Object.entries(c).map(([id, x]) => [id, x[1]])) };
@@ -613,7 +650,7 @@ function App() {
 
   return html`<div class=${'app' + (hasData ? '' : ' nodata')}>
     <header class="top">
-      <p class="brand">Mapa do voto <span>${UF_NOME}</span></p>
+      <p class="brand">Mapa da política <span>${UF_NOME}</span></p>
     </header>
 
     ${indice && html`<section class="filters" aria-label="Filtros">
@@ -631,7 +668,8 @@ function App() {
       <${CandidatePicker} cands=${cands} value=${candKey} onPick=${k => { setCandKey(k); setModo('candidato'); setSelected(null); setComp(null); }} />`}
     </section>`}
 
-    <section class="stage" ref=${mapRef}>
+    <a class="pular" href="#conteudo">Pular para o mapa</a>
+    <main class="stage" id="conteudo" ref=${mapRef}>
       ${panorama ? html`<div class="who">
           <h1>${cargoLabel((cargos.find(c => c[0] === cargo) || [cargo, CARGO_NOMES[cargo]])[1])}</h1>
           <p>Panorama · ${ds.ano}${ds.turno !== '1' ? ' (2º turno)' : ''} · ${cands.length} candidatos com voto</p>
@@ -648,10 +686,11 @@ function App() {
       ${!panorama && cmp && avisoComparacao(cmp) && html`<p class="aviso" role="alert">${avisoComparacao(cmp)}</p>`}
       <${MapCanvas} view=${panorama ? viewPanorama : viewMapa} metric=${panorama ? 'pct' : metric} selected=${selected} onSelect=${setSelected} hover=${hover} onHover=${setHover} classes=${panorama ? classesPanorama : classes} modoVar=${!panorama && cmp ? varModo : false} />
       ${panorama && html`<${LegendaPanorama} camada=${camada} setCamada=${setCamada} classes=${classesPanorama} vence=${vence} nomeDe=${nomeDoCand} temComparecimento=${!!compCargo} />`}
+      ${panorama && html`<${TabelaDoPanorama} camada=${camada} vence=${vence} cands=${cands} comp=${compCargo} />`}
       ${panorama && html`<${CardPanorama} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} vence=${vence} cands=${cands} comp=${compCargo} />`}
       ${!panorama && view && html`<${Legend} classes=${classes} metric=${metric} setMetric=${setMetric} view=${view} modoVar=${cmp ? varModo : false} varModo=${varModo} setVarModo=${setVarModo} />`}
       ${!panorama && html`<${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} det=${det} linha=${cmp && shown ? { ...(cmp.rows.find(r => r.id === shown) || { vAnt: 0, vRec: 0, d: 0, dp: 0 }), ant: cmp.ant, rec: cmp.rec } : null} />`}
-    </section>
+    </main>
 
     <aside class="side">
       ${panorama ? html`<${StatsPanorama} comp=${compCargo} />
@@ -669,6 +708,7 @@ function App() {
       <${Fonte} item=${item} />
       <p class="credits">Fontes: TSE, API de resultados (ciclo atual) e Portal de Dados Abertos (histórico, cadastro e bens dos candidatos, prestação de contas e comparecimento). Malha municipal IBGE, simplificada.</p>
     </aside>
+    <${AvisoLegal} />
   </div>`;
 }
 render(html`<${App} />`, document.getElementById('root'));
