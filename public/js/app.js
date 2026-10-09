@@ -659,6 +659,7 @@ function App() {
       : html`${cmp ? html`<${ComparaStats} cmp=${cmp} />` : html`<${Stats} view=${view} />`}
         ${view && !cmp && html`<${PAINEL.Concentracao} cand=${cands.find(c => c.key === candKey)} />`}
         ${view && !cmp && html`<${PAINEL.ForcaDoVoto} cand=${cands.find(c => c.key === candKey)} ctx=${ctx} />`}
+        ${view && !cmp && html`<${PAINEL.ForaDaCurva} cand=${cands.find(c => c.key === candKey)} ctx=${ctx} />`}
         ${view && !cmp && html`<${PAINEL.Dinheiro} cand=${cands.find(c => c.key === candKey)} financas=${an.financas} ano=${view.ano} linhasDoCargo=${linhasDoCargo} ctx=${ctx} onPick=${escolher} />`}
         ${entradas.length > 1 && html`<${Trajetoria} entradas=${entradas} view=${view} comp=${comp} onComparar=${e => { setComp(c => c && c.ano === e.ano && c.turno === e.turno && c.cargo === e.cargo && c.nr === e.nr ? null : e); setSelected(null); }} onSair=${() => setComp(null)} />`}
         ${cmp ? html`<${ComparaRanking} cmp=${cmp} selected=${selected} onSelect=${selectFromList} />` : html`<${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${selectFromList} />`}
