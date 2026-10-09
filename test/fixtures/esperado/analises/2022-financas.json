@@ -12,7 +12,13 @@
    "dc": [
     [
      "Publicidade por adesivos",
-     1500000
+     1500000,
+     [
+      [
+       "GRAFICA DO POVO LTDA",
+       1500000
+      ]
+     ]
     ]
    ],
    "rs": [
@@ -54,7 +60,13 @@
    "dc": [
     [
      "Despesas com pessoal",
-     200000
+     200000,
+     [
+      [
+       "ASSESSOR",
+       200000
+      ]
+     ]
     ]
    ],
    "rs": [
