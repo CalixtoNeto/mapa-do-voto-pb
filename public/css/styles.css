@@ -296,3 +296,7 @@ button.abre{cursor:pointer}
 .tabela-mapa th,.tabela-mapa td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap}
 .tabela-mapa th[scope="row"],.tabela-mapa thead th:first-child{text-align:left; font-weight:500}
 .tabela-mapa caption{text-align:left; font-weight:600; padding:6px 0}
+.partidos li:has(> .abre){display:block; padding:0}
+.partidos .abre{display:grid; width:100%; grid-template-columns:1fr auto; gap:3px 10px; padding:8px 0; border:0; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer}
+.partidos .abre:hover .nm{text-decoration:underline; text-underline-offset:3px}
+.partidos .vv small{font:400 12px var(--sans); color:var(--muted)}
