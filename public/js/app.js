@@ -1,6 +1,6 @@
 // Interface: Preact + htm, mapa em Canvas 2D.
 // startApp é chamado por main.js depois que a malha é carregada; AN são as análises (js/analises.mjs).
-function startApp(TOPO, AN) {
+function startApp(TOPO, AN, PERFIS) {
 const { html, render, useState, useEffect, useMemo, useRef } = htmPreact;
 const NORM = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const UF = 'PB', UF_NOME = 'Paraíba', N_MUN = 223;
@@ -529,8 +529,14 @@ function App() {
   const mapRef = useRef();
   const [pessoas, setPessoas] = useState({}), [comp, setComp] = useState(null), [dsB, setDsB] = useState(null);
   const [varModo, setVarModo] = useState(ls.get('mv.varmodo') || 'rel');
-  const [modo, setModo] = useState(ls.get('mv.modo') || 'candidato'), [camada, setCamada] = useState('vencedor');
-  useEffect(() => { ls.set('mv.modo', modo); }, [modo]);
+  const [modo, setModo] = useState(PERFIS.ehRotaDePerfil() ? 'perfis' : (ls.get('mv.modo') !== 'perfis' && ls.get('mv.modo')) || 'candidato'), [camada, setCamada] = useState('vencedor');
+  useEffect(() => { if (modo !== 'perfis') ls.set('mv.modo', modo); }, [modo]);
+  // o perfil do estado tem endereço próprio (#perfis, #perfil/estado); um link para ele abre a página mesmo vindo do mapa
+  useEffect(() => {
+    const aoMudar = () => { if (PERFIS.ehRotaDePerfil()) setModo('perfis'); };
+    window.addEventListener('hashchange', aoMudar);
+    return () => window.removeEventListener('hashchange', aoMudar);
+  }, []);
   const indiceAnalises = AN.usarIndiceDasAnalises('data/eleicoes');
   useEffect(() => { ls.set('mv.varmodo', varModo); }, [varModo]);
   useEffect(() => { lerJson('data/eleicoes/pessoas.json').then(setPessoas).catch(() => { }); }, []);
@@ -648,22 +654,26 @@ function App() {
   const hasData = !!ds;
   const sitTxt = view && sitLabel(view.sit);
 
-  return html`<div class=${'app' + (hasData ? '' : ' nodata')}>
+  const sairDosPerfis = () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); };
+  const trocarModo = m => { if (m === 'perfis') location.hash = 'perfis'; else sairDosPerfis(); setModo(m); setSelected(null); if (m !== 'candidato') setComp(null); };
+  const botaoDeModo = ([m, rotulo]) => html`<button type="button" role="radio" aria-checked=${modo === m} onClick=${() => trocarModo(m)}>${rotulo}</button>`;
+  const seletorDeModo = html`<div class="seg modo" role="radiogroup" aria-label="O que ver"><span class="grupo-modo primeiro" aria-hidden="true">Eleições</span>
+    ${botaoDeModo(['candidato', 'Candidato'])}${botaoDeModo(['panorama', 'Panorama do cargo'])}${botaoDeModo(['perfis', 'Perfil do estado'])}</div>`;
+
+  return html`<div class=${'app' + (hasData || modo === 'perfis' ? '' : ' nodata') + (modo === 'perfis' ? ' com-perfis' : '')}>
     <header class="top">
       <p class="brand">Mapa da política <span>${UF_NOME}</span></p>
     </header>
 
-    ${indice && html`<section class="filters" aria-label="Filtros">
+    ${modo === 'perfis' ? html`<section class="filters">${seletorDeModo}</section>
+      <main class="perfis"><${PERFIS.PaginaDePerfis} /></main>` : html`${indice && html`<section class="filters" aria-label="Filtros">
+      ${seletorDeModo}
       <label class="field">Eleição
         <select value=${eleicao} onChange=${e => { setEleicao(e.target.value); setSelected(null); setCandKey(null); setComp(null); }}>
           ${indice.map(e => html`<option value=${e.id}>${rotuloEleicao(e)}</option>`)}
         </select></label>
       ${hasData && html`<div class="chips" role="radiogroup" aria-label="Cargo">
         ${cargos.map(([cd, nm]) => html`<button type="button" role="radio" aria-checked=${cd === cargo} onClick=${() => { setCargo(cd); setSelected(null); setComp(null); }}>${cargoLabel(nm)}</button>`)}
-      </div>
-      <div class="seg modo" role="radiogroup" aria-label="O que ver">
-        <button type="button" role="radio" aria-checked=${modo === 'candidato'} onClick=${() => { setModo('candidato'); setSelected(null); }}>Candidato</button>
-        <button type="button" role="radio" aria-checked=${modo === 'panorama'} onClick=${() => { setModo('panorama'); setSelected(null); setComp(null); }}>Panorama do cargo</button>
       </div>
       <${CandidatePicker} cands=${cands} value=${candKey} onPick=${k => { setCandKey(k); setModo('candidato'); setSelected(null); setComp(null); }} />`}
     </section>`}
@@ -707,7 +717,7 @@ function App() {
         ${view && !cmp && html`<${PAINEL.Dobradinhas} cand=${cands.find(c => c.key === candKey)} ds=${ds} onPick=${escolher} />`}`}
       <${Fonte} item=${item} />
       <p class="credits">Fontes: TSE, API de resultados (ciclo atual) e Portal de Dados Abertos (histórico, cadastro e bens dos candidatos, prestação de contas e comparecimento). Malha municipal IBGE, simplificada.</p>
-    </aside>
+    </aside>`}
     <${AvisoLegal} />
   </div>`;
 }

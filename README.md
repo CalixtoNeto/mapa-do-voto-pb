@@ -82,6 +82,19 @@ O gerador `scripts/gerar-analises.mjs` grava, ao lado dos arquivos de votação:
 
 Para gerar ou atualizar: **Actions → Gerar análises → Run workflow** (em branco, refaz todos os anos; ou informe, por exemplo, `2022 2026`). O workflow **Atualizar dados de uma eleição** também gera as análises do ano. Localmente: `npm run analises -- 2022`.
 
+## Perfil do estado
+
+Em **Perfil do estado** (ou direto em `#perfis`), o Governo da Paraíba em cada ano desde 2023, pela [API de dados abertos do Governo da Paraíba](https://api.dados.pb.gov.br/swagger/), tudo em árvore (o total que se abre até quem recebeu):
+
+- **Para onde foi o dinheiro**: por área (área → tipo de despesa → credor), por órgão e pela origem do dinheiro (fonte → área → credor). As despesas orçamentárias vêm mês a mês; somando os meses, sai o pago no ano.
+- **Valores atípicos nas compras**: meses com mais de 3 vezes a mediana mensal de um tipo de compra (e R$ 5 milhões ou mais), tipos de compra de R$ 20 milhões ou mais com 70% ou mais num fornecedor e tipos de compra que dobraram de um ano para o outro. São contas do site, sem juízo sobre as despesas. As despesas do estado não trazem a modalidade de licitação, então não há a conta "sem licitação".
+- **Folha de pessoal**: o último mês publicado do ano, tipo de cargo → órgão, com o valor bruto e o número de vínculos. Nome e CPF dos servidores não vão para o site.
+- **Licitações e contratos**: contratações por modalidade → órgão (valor adjudicado) e os maiores contratados.
+- **Emendas parlamentares estaduais**: deputado → secretaria → objeto, pelo valor indicado.
+- **Doadores e fornecedores de campanhas estaduais** (governador e deputado estadual, 2018 e 2022) **que também receberam do estado**, cruzados pelo documento (CNPJ; para pessoa física, os dígitos centrais do CPF e o nome). Bancos, Correios e concessionárias de serviço público ficam de fora.
+
+Para gerar ou atualizar: **Actions → Atualizar perfis → Run workflow** (roda sozinho todo dia 10). Localmente: `node scripts/gerar-perfis.mjs 2025` (cerca de 1 minuto por ano).
+
 ## De onde vêm os dados
 
 Os resultados ficam no repositório, em `public/data/eleicoes/`: um `ANO-tTURNO.json` por eleição e turno, o `ANO-tTURNO-locais.json` com os votos por escola (carregado só ao clicar num município) um `index.json` que o site lê para listar as eleições e um `pessoas.json` que liga o mesmo candidato entre eleições (pelo nome completo). O site é totalmente estático: o navegador do visitante nunca chama o TSE.
