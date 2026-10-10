@@ -3,6 +3,7 @@
 import { nf, pct, dinheiro, sentence } from '../formato.mjs';
 import { ArvoreDeBarras } from '../arvore.mjs';
 import { ListaDeBarras, usarLimite } from '../componentes.mjs';
+import { Colunas } from '../graficos.mjs';
 import { ligacoesDoAno, mesAno } from './calculos-perfil.mjs';
 import { Voltar, Topo, Estatisticas, Secao, Ligacoes, nomeProprio } from './pecas.mjs';
 import { ArvoreDeGastos } from './arvore.mjs';
@@ -68,6 +69,7 @@ export function PerfilEstado({ anos }) {
     <${Topo} titulo="Governo da Paraíba" linhas=${['Executivo estadual: gastos, folha, compras e emendas, pelos dados abertos do Governo da Paraíba']} />
     <h2 class="perfil-ano">O estado em</h2><${Anos} anos=${anos} ano=${a.ano} setAno=${setAno} />
     <${Numeros} a=${a} />
+    ${anos.length > 1 && html`<h3>Pago em cada ano</h3><${Colunas} itens=${[...anos].reverse().map(x => ({ n: x.ano, v: soma(x.despesas.orgaos, 2), rotulo: dinheiro(soma(x.despesas.orgaos, 2)) }))} descricao="Total pago pelo governo em cada ano publicado" />`}
     <${Secao} id="eg" titulo=${`Para onde foi o dinheiro em ${a.ano}`}><${ArvoreDeGastos} key=${a.ano} arvores=${detalhe?.arvores} ano=${a.ano} /><//>
     <${Secao} id="ex" titulo=${`Valores atípicos nas compras de ${a.ano}`}><${Alertas} a=${a} anos=${anos} /><//>
     <${Folha} a=${a} detalhe=${detalhe} /><${Compras} a=${a} detalhe=${detalhe} /><${Emendas} detalhe=${detalhe} />
