@@ -22,7 +22,7 @@ export function PerfilAssembleia({ assembleia: a }) {
   return html`<article class="perfil">
     <${Voltar} />
     <${Topo} titulo="Assembleia Legislativa da Paraíba" linhas=${[`${a.legislatura.numero}ª legislatura · ${ano(a.legislatura.inicio)}–${ano(a.legislatura.fim)}`]} />
-    <${Estatisticas} itens=${[{ rotulo: 'Sessões com presença registrada', valor: nf.format(a.sessoes) }, { rotulo: 'Votações nominais registradas', valor: nf.format(a.votacoesNominais) },
+    <${Estatisticas} itens=${[{ rotulo: 'Sessões realizadas (com presença ou voto registrado)', valor: nf.format(a.sessoes) }, { rotulo: 'Votações nominais registradas', valor: nf.format(a.votacoesNominais) },
       { rotulo: 'Deputados em exercício', valor: nf.format(a.vereadores.filter(v => v.emExercicio).length) }]} />
     <${Secao} id="ad" titulo="Deputados estaduais"><${ListaDeDeputados} deputados=${a.vereadores} /><//>
     <${Secao} id="ap" titulo="Presença nas sessões"><${Presencas} deputados=${a.vereadores} />
