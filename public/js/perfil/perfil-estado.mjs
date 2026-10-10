@@ -4,7 +4,7 @@ import { nf, pct, dinheiro, sentence } from '../formato.mjs';
 import { ArvoreDeBarras } from '../arvore.mjs';
 import { ListaDeBarras, usarLimite } from '../componentes.mjs';
 import { ligacoesDoAno, mesAno } from './calculos-perfil.mjs';
-import { Topo, Estatisticas, Secao, Ligacoes, nomeProprio } from './pecas.mjs';
+import { Voltar, Topo, Estatisticas, Secao, Ligacoes, nomeProprio } from './pecas.mjs';
 import { ArvoreDeGastos } from './arvore.mjs';
 import { Alertas } from './alertas.mjs';
 import { usarDetalhe } from './dados-perfil.mjs';
@@ -64,6 +64,7 @@ export function PerfilEstado({ anos }) {
   const a = anos.find(x => x.ano === ano) || anos[0], detalhe = usarDetalhe(a?.ano);
   if (!a) return html`<article class="perfil"><p class="hint">O perfil do estado ainda não foi gerado.</p></article>`;
   return html`<article class="perfil">
+    <${Voltar} />
     <${Topo} titulo="Governo da Paraíba" linhas=${['Executivo estadual: gastos, folha, compras e emendas, pelos dados abertos do Governo da Paraíba']} />
     <h2 class="perfil-ano">O estado em</h2><${Anos} anos=${anos} ano=${a.ano} setAno=${setAno} />
     <${Numeros} a=${a} />

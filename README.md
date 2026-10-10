@@ -93,7 +93,9 @@ Em **Perfil do estado** (ou direto em `#perfis`), o Governo da Paraíba em cada 
 - **Emendas parlamentares estaduais**: deputado → secretaria → objeto, pelo valor indicado.
 - **Doadores e fornecedores de campanhas estaduais** (governador e deputado estadual, 2018 e 2022) **que também receberam do estado**, cruzados pelo documento (CNPJ; para pessoa física, os dígitos centrais do CPF e o nome). Bancos, Correios e concessionárias de serviço público ficam de fora.
 
-Para gerar ou atualizar: **Actions → Atualizar perfis → Run workflow** (roda sozinho todo dia 10). Localmente: `node scripts/gerar-perfis.mjs 2025` (cerca de 1 minuto por ano).
+**Assembleia Legislativa** (`#perfil/assembleia`) e uma página para cada deputado estadual (`#perfil/nome-do-deputado`), pelo [SAPL da ALPB](https://sapl.al.pb.leg.br/), na legislatura atual: presença nas sessões, votos nominais (sim, não, abstenção, quantas vezes votou com a maioria), com quem mais e menos vota junto, matérias de autoria por tipo e as mais recentes (com link para o SAPL), partidos, votos em 2022 (com link para o mapa) e os doadores e fornecedores da campanha que também receberam do estado. A ligação do deputado com a candidatura é pelo nome completo (o SAPL não traz o CPF). Votar junto não indica acordo político; votações simbólicas só registram o resultado.
+
+Para gerar ou atualizar: **Actions → Atualizar perfis → Run workflow** (roda sozinho todo dia 10). Localmente: `node scripts/gerar-perfis.mjs 2025` (cerca de 1 minuto por ano do governo; a Assembleia leva cerca de meia hora, `--sem-assembleia` pula e `--so-assembleia` faz só ela).
 
 ## De onde vêm os dados
 

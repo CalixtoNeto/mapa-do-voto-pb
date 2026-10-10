@@ -2,7 +2,8 @@ name: Atualizar perfis
 
 # Todo dia 10 (e à mão, em Actions > Atualizar perfis > Run workflow). Lê da API de dados abertos do Governo da Paraíba
 # as despesas, a folha (último mês do ano), as contratações, os contratos e as emendas estaduais e grava
-# public/data/perfis/ (estado-ANO.json e estado-ANO-detalhe.json).
+# public/data/perfis/ (estado-ANO.json e estado-ANO-detalhe.json); e do SAPL da Assembleia Legislativa os deputados,
+# a presença, os votos nominais e as matérias da legislatura atual (assembleia.json, cerca de meia hora).
 on:
   schedule:
     - cron: '17 9 10 * *'
@@ -25,7 +26,7 @@ concurrency:
 jobs:
   perfis:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 120
     env:
       ANOS: ${{ inputs.anos }}
       GH_TOKEN: ${{ github.token }}

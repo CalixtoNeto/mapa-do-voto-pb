@@ -1,5 +1,5 @@
-// Carrega o perfil do estado (data/perfis/) uma vez por visita: índice e todos os anos do Governo da Paraíba.
-// O endereço da página fica no hash (#perfis, #perfil/estado) para ser compartilhado.
+// Carrega o perfil do estado (data/perfis/) uma vez por visita: índice, Assembleia e todos os anos do governo.
+// O endereço da página fica no hash (#perfis, #perfil/estado, #perfil/assembleia, #perfil/nome-do-deputado).
 const { useState, useEffect } = window.htmPreact;
 const BASE = 'data/perfis';
 
@@ -9,8 +9,9 @@ let carregamento = null;
 async function carregar() {
   const indice = await lerJson(`${BASE}/index.json`);
   if (!indice?.anos?.length) return { vazio: true };
-  const anos = await Promise.all(indice.anos.map(ano => lerJson(`${BASE}/estado-${ano}.json`)));
-  return { indice, anos: anos.filter(Boolean) };
+  const [assembleia, ...anos] = await Promise.all([indice.assembleia ? lerJson(`${BASE}/assembleia.json`) : null,
+    ...indice.anos.map(ano => lerJson(`${BASE}/estado-${ano}.json`))]);
+  return { indice, assembleia, anos: anos.filter(Boolean) };
 }
 
 export function usarPerfis() {

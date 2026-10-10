@@ -592,11 +592,14 @@ function App() {
     setCargo(c => cargos.some(x => x[0] === c) ? c : (last && cargos.some(x => x[0] === last.c) ? last.c : cargos[0][0]));
   }, [cargos]);
   const cands = useMemo(() => ds && cargo ? ds.cands.filter(c => c.cargo === cargo).sort((a, b) => b.total - a.total) : [], [ds, cargo]);
+  // vindo de um perfil (deputado), o candidato só existe depois que a eleição escolhida carrega
+  const [candPendente, setCandPendente] = useState(null);
   useEffect(() => {
     if (!cands.length) return;
+    if (candPendente && cands.some(c => c.key === candPendente)) { setCandKey(candPendente); setCandPendente(null); return; }
     const last = ls.get('mv.last');
     setCandKey(k => cands.some(c => c.key === k) ? k : (last && last.k && cands.some(c => c.key === last.k) ? last.k : null));
-  }, [cands]);
+  }, [cands, candPendente]);
   const view = useMemo(() => {
     const c = ds && cands.find(x => x.key === candKey);
     return c ? buildView(ds, c) : null;
@@ -656,6 +659,12 @@ function App() {
 
   const sairDosPerfis = () => { if (location.hash) history.replaceState(null, '', location.pathname + location.search); };
   const trocarModo = m => { if (m === 'perfis') location.hash = 'perfis'; else sairDosPerfis(); setModo(m); setSelected(null); if (m !== 'candidato') setComp(null); };
+  // chave completa do candidato ("2022|1|7|sequencial"): abre a eleição, o cargo e o candidato no mapa
+  const verNoMapa = chave => {
+    const [ano, turno, cd] = chave.split('|');
+    sairDosPerfis(); setEleicao(`${ano}|${turno}`); setCargo(cd); setCandPendente(chave); setModo('candidato'); setSelected(null); setComp(null);
+    window.scrollTo(0, 0);
+  };
   const botaoDeModo = ([m, rotulo]) => html`<button type="button" role="radio" aria-checked=${modo === m} onClick=${() => trocarModo(m)}>${rotulo}</button>`;
   const seletorDeModo = html`<div class="seg modo" role="radiogroup" aria-label="O que ver"><span class="grupo-modo primeiro" aria-hidden="true">Eleições</span>
     ${botaoDeModo(['candidato', 'Candidato'])}${botaoDeModo(['panorama', 'Panorama do cargo'])}${botaoDeModo(['perfis', 'Perfil do estado'])}</div>`;
@@ -666,7 +675,7 @@ function App() {
     </header>
 
     ${modo === 'perfis' ? html`<section class="filters">${seletorDeModo}</section>
-      <main class="perfis"><${PERFIS.PaginaDePerfis} /></main>` : html`${indice && html`<section class="filters" aria-label="Filtros">
+      <main class="perfis"><${PERFIS.PaginaDePerfis} aoVerNoMapa=${verNoMapa} /></main>` : html`${indice && html`<section class="filters" aria-label="Filtros">
       ${seletorDeModo}
       <label class="field">Eleição
         <select value=${eleicao} onChange=${e => { setEleicao(e.target.value); setSelected(null); setCandKey(null); setComp(null); }}>

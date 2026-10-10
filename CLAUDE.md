@@ -34,6 +34,9 @@ Site estático (`public/`) com dados gerados por `scripts/gerar-dados.mjs` a par
 - `scripts/perfis/{arvores,somas,cruzamentos,campanhas}.mjs` e `scripts/lib/documento.mjs` são iguais aos do repositório de
   Bayeux; os módulos de `public/js/perfil/` vieram de lá e mudam só no que é do estado (`perfil-estado.mjs`, `pagina-perfis.mjs`,
   `dados-perfil.mjs` e os textos de `alertas.mjs`).
+- A Assembleia vem do SAPL da ALPB (`scripts/fontes/assembleia.mjs`, filtrado pela legislatura atual) e usa as mesmas regras da
+  Câmara de Bayeux (`scripts/perfis/{camara,votacoes,autorias}.mjs` e `scripts/fontes/sapl.mjs`, iguais nos dois repositórios);
+  no JSON os deputados ficam em `vereadores` (o formato de `resumoDaCamara`).
 - Nunca publique CPF inteiro: use `documentoPublico` (CNPJ inteiro, CPF mascarado) e, para cruzar, `documentoParaCruzar`.
   A folha só vai agregada (tipo de cargo e órgão), sem nomes.
 - Alerta é conta do site: títulos descritivos ("valores atípicos"), nunca "irregular" ou citação de lei junto do dado.
