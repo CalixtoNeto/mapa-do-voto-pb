@@ -6,13 +6,13 @@ Votos de candidatos a presidente, governador, senador, deputado federal e deputa
 
 ## Como usar
 
-![Escolhendo a eleição e o cargo, buscando um candidato, vendo o mapa e os votos por escola em João Pessoa](docs/uso.gif)
+![Escolhendo a eleição e o cargo, buscando um candidato, trocando entre votos e % no município e vendo os votos por local de votação](docs/uso.gif)
 
 Abra o site: ele lista todas as eleições disponíveis sozinho, sem precisar baixar nem enviar arquivos. Escolha a eleição (ano e turno), o cargo e o candidato. Clique num município para ver os números e, quando existir, os votos em cada local de votação (escola).
 
 ## Comparar a evolução de um candidato
 
-![Comparando a votação de Hugo Motta em 2018 e 2022](docs/comparar.gif)
+![Comparando a votação de Hugo Motta em 2014 e 2022: mapa da variação, por votos e por parcela, e o ranking dos municípios](docs/comparar.gif)
 
 Quando o candidato disputou mais de uma eleição, a seção **Evolução do candidato** mostra os votos dele em cada uma, com a parcela dos votos nominais e a posição. A ligação entre eleições é feita pelo nome completo no TSE, inclusive entre cargos diferentes (por exemplo, vereador em 2016 e deputado em 2018).
 
@@ -26,7 +26,7 @@ Além do mapa de votos, cada candidato e cada cargo têm análises tiradas dos D
 
 **Na ficha do candidato** (botão *Candidato*):
 
-![Análises da ficha de Hugo Motta (deputado federal, 2022): força do voto, dinheiro da campanha, doadores e fornecedores, evolução patrimonial e dobradinhas](docs/candidato.gif)
+![Análises da ficha de Hugo Motta (deputado federal, 2022): força do voto, dinheiro da campanha em árvore até cada fornecedor, quem doou, bens declarados e votação com distribuição parecida](docs/candidato.gif)
 
 - **Valores distantes da mediana do cargo**: o que destoa na campanha em relação aos outros candidatos ao mesmo cargo na mesma eleição: uma categoria de gasto (combustível, impressos, veículos…) ou o custo por voto 3 vezes ou mais a mediana dos outros, recursos próprios acima dos bens declarados, um só doador ou fornecedor com metade ou mais do dinheiro, quem doou e também recebeu da campanha e despesas que ficaram sem pagar. É uma comparação estatística, sem juízo sobre as contas, e o painel diz isso antes da lista (com as causas legítimas mais comuns).
 - **Dinheiro da campanha**: quanto recebeu, quanto declarou ter gasto, **custo por voto**, quanto veio do **fundo eleitoral** e a origem do dinheiro (fundo eleitoral, fundo partidário e partido, doações, recursos próprios e de outros candidatos); a **posição entre os candidatos do cargo** no recebido, no gasto e no fundo eleitoral, com a mediana do cargo; **para onde foi o dinheiro** (todas as categorias de despesa, numa árvore que abre cada categoria até todos os fornecedores); **quem doou** (os dez maiores doadores, com a parcela de cada um no recebido); quanto **ficou sem pagar**, quanto veio do **maior doador** e de **recursos próprios**; **doadores e fornecedores em comum** com outras campanhas; **quando o dinheiro chegou** (por semana); e o dinheiro da mesma pessoa **em cada eleição** (recebido, gasto, votos e custo por voto).
@@ -38,7 +38,7 @@ Além do mapa de votos, cada candidato e cada cargo têm análises tiradas dos D
 
 **No panorama do cargo** (botão *Panorama do cargo*):
 
-![Panorama de deputado federal em 2022: quem venceu, abstenção, gasto × votos, o dinheiro elege?, partidos, fundo eleitoral, perfil, concentração e análises por lugar](docs/panorama.gif)
+![Panorama de deputado federal em 2022: quem venceu, abstenção, a tabela do mapa, gasto × votos, partidos em hierarquia (partido → candidatos) e análises por município](docs/panorama.gif)
 
 - Mapa de **quem venceu** em cada município e de **abstenção, brancos e nulos**, com os totais do estado.
 - **Gasto × votos** de todos os candidatos, com diagonais de custo por voto, e rankings de menor e maior custo por voto, mais fundo eleitoral, mais dinheiro recebido e maior gasto.
@@ -83,6 +83,8 @@ O gerador `scripts/gerar-analises.mjs` grava, ao lado dos arquivos de votação:
 Para gerar ou atualizar: **Actions → Gerar análises → Run workflow** (em branco, refaz todos os anos; ou informe, por exemplo, `2022 2026`). O workflow **Atualizar dados de uma eleição** também gera as análises do ano. Localmente: `npm run analises -- 2022`.
 
 ## Perfil do estado
+
+![Perfil do estado: Governo da Paraíba (para onde foi o dinheiro em árvore, valores atípicos, folha e emendas estaduais), Assembleia Legislativa e a página de um deputado](docs/perfil.gif)
 
 Em **Perfil do estado** (ou direto em `#perfis`), o Governo da Paraíba em cada ano desde 2023, pela [API de dados abertos do Governo da Paraíba](https://api.dados.pb.gov.br/swagger/), tudo em árvore (o total que se abre até quem recebeu):
 
