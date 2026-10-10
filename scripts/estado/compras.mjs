@@ -2,7 +2,7 @@
 // valor adjudicado, e contratos por contratado.
 import { centavos, somarRecebedor, recebedoresOrdenados } from '../perfis/somas.mjs';
 import { novaArvore, somarNaArvore, arvorePodada } from '../perfis/arvores.mjs';
-import { documentoPublico } from '../lib/documento.mjs';
+import { documentoPublico, nomeSemDocumento } from '../lib/documento.mjs';
 
 const valor = v => Number(v) || 0;
 
@@ -26,6 +26,6 @@ export function arvoreDasContratacoes(contratacoes) {
 // [contratado, CPF/CNPJ, valor dos contratos, quantos], juntando pelo documento sem pontuação.
 export function resumoDosContratos(contratos, limite = 40) {
   const porContratado = {};
-  for (const c of contratos) somarRecebedor(porContratado, c.contratado, documentoPublico(c.cnpjCpf), valor(c.valorTotal));
+  for (const c of contratos) somarRecebedor(porContratado, nomeSemDocumento(c.contratado), documentoPublico(c.cnpjCpf), valor(c.valorTotal));
   return recebedoresOrdenados(porContratado, limite);
 }

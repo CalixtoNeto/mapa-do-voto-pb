@@ -2,7 +2,7 @@
 // então somar os 12 meses dá o pago no ano (inclusive o que foi pago de empenhos anteriores).
 import { somar, ordenado, somarRecebedor, recebedoresOrdenados, centavos } from '../perfis/somas.mjs';
 import { novaArvore, somarNaArvore, arvorePodada } from '../perfis/arvores.mjs';
-import { documentoPublico } from '../lib/documento.mjs';
+import { documentoPublico, nomeSemDocumento } from '../lib/documento.mjs';
 
 // O que é compra ou contratação (material, serviço, obra, locação); salário, previdência e repasses ficam de fora.
 const COMPRA = /material|servi[cç]o|loca[cç]|obras|equipamento|consultoria|passage/i;
@@ -15,7 +15,7 @@ export const novasDespesasDoEstado = () => ({
 });
 
 export function somarDespesaDoEstado(d, r) {
-  const pago = valor(r.valorPago), orgao = r.nomeOrgao, elemento = r.descricaoElemento, credor = r.nomeCredor, funcao = r.nomeFuncao;
+  const pago = valor(r.valorPago), orgao = r.nomeOrgao, elemento = r.descricaoElemento, credor = nomeSemDocumento(r.nomeCredor), funcao = r.nomeFuncao;
   somar(d.empenhado, orgao, valor(r.valorEmpenhado));
   somar(d.pago, orgao, pago);
   somar(d.funcoes, funcao, pago);
