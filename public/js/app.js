@@ -106,7 +106,7 @@ const CFG = {
   nomeDoCargo: CARGO_NOMES,
 };
 const PAINEL = AN.criarPainelDoCandidato(CFG), Panorama = AN.criarPanorama(CFG);
-const CAMADAS = [['vencedor', 'Quem venceu'], ['abstencao', 'Abstenção'], ['brancos', 'Brancos'], ['nulos', 'Nulos']];
+const CAMADAS = [['vencedor', 'Mais votado'], ['abstencao', 'Abstenção'], ['brancos', 'Brancos'], ['nulos', 'Nulos']];
 const lerJson = async u => { const r = await fetch(u, { cache: 'no-cache' }); if (!r.ok) throw new Error(u); return r.json(); };
 
 // ---------- Mapa (Canvas 2D) ----------
@@ -299,13 +299,24 @@ function MuniCard({ view, id, pinned, onClear, det, linha }) {
   </div>`;
 }
 
+// Minigráfico dos votos em cada eleição (Evolução do candidato): só a forma da série, os números vêm na lista.
+function Sparkline({ valores }) {
+  if (valores.length < 2) return null;
+  const max = Math.max(...valores), min = Math.min(...valores), L = 120, A = 32;
+  const ponto = (v, i) => [4 + i * (L - 8) / (valores.length - 1), A - 4 - (max === min ? 0.5 : (v - min) / (max - min)) * (A - 8)];
+  const pontos = valores.map(ponto);
+  return html`<svg class="sparkline" viewBox=${`0 0 ${L} ${A}`} width=${L} height=${A} aria-hidden="true">
+    <polyline points=${pontos.map(p => p.join(',')).join(' ')} fill="none" />
+    ${pontos.map(([x, y]) => html`<circle cx=${x} cy=${y} r="3" />`)}</svg>`;
+}
+
 // Votos do mesmo candidato em todas as eleições em que ele aparece
 function Trajetoria({ entradas, view, comp, onComparar, onSair }) {
   const lista = [...entradas].sort((a, b) => a.ano - b.ano || a.turno - b.turno);
   const max = Math.max(1, ...lista.map(e => e.total));
   const igual = (e, o) => o && e.ano === o.ano && e.turno === o.turno && e.cargo === o.cargo && e.nr === o.nr;
   return html`<section class="traj" aria-labelledby="tj">
-    <div class="rk-head"><h2 id="tj">Evolução do candidato</h2>${comp && html`<button type="button" class="link" onClick=${onSair}>Sair da comparação</button>`}</div>
+    <div class="rk-head"><h2 id="tj">Evolução do candidato</h2><${Sparkline} valores=${lista.map(e => e.total)} />${comp && html`<button type="button" class="link" onClick=${onSair}>Sair da comparação</button>`}</div>
     <ul>${lista.map(e => { const atual = igual(e, view), em = igual(e, comp);
       return html`<li key=${e.ano + e.turno + e.cargo} class=${em ? 'em' : ''}>
         <div class="tl"><span class="ty">${e.ano}${e.turno !== '1' ? ' · 2º turno' : ''}</span><span class="tc">${CARGO_NOMES[e.cargo] || e.cargo}</span>
@@ -369,6 +380,7 @@ function CandidatePicker({ cands, value, onPick }) {
     <input id="cand" type="search" autocomplete="off" placeholder=${cur ? `${titleCase(cur.urna)} (${cur.nr})` : 'Nome de urna, número ou partido'}
       value=${q} onInput=${e => { setQ(e.target.value); setOpen(true); }} onFocus=${() => setOpen(true)}
       onKeyDown=${e => { if (e.key === 'Escape') setOpen(false); if (e.key === 'Enter' && list[0]) { onPick(list[0].key); setQ(''); setOpen(false); e.target.blur(); } }} />
+    ${cur && html`<button type="button" class="limpar" aria-label="Limpar o candidato escolhido" onClick=${() => { onPick(null); setQ(''); }}>✕</button>`}
     ${open && html`<ul class="results" role="listbox">
       ${list.map(c => html`<li role="option" aria-selected=${c.key === value}>
         <button type="button" onMouseDown=${e => e.preventDefault()} onClick=${() => { onPick(c.key); setQ(''); setOpen(false); document.activeElement && document.activeElement.blur(); }}>
@@ -437,7 +449,7 @@ function Fonte({ item }) {
   </section>`;
 }
 
-// ---------- Panorama do cargo: mapa de quem venceu e do comparecimento ----------
+// ---------- Panorama do cargo: mapa do mais votado e do comparecimento ----------
 function LegendaPanorama({ camada, setCamada, classes, vence, nomeDe, temComparecimento }) {
   const seg = html`<div class="seg rolavel" role="radiogroup" aria-label="O que o mapa mostra">
     ${CAMADAS.map(([id, nome]) => html`<button type="button" role="radio" aria-checked=${camada === id} onClick=${() => setCamada(id)}>${nome}</button>`)}</div>`;
@@ -462,7 +474,7 @@ function CardPanorama({ id, pinned, onClear, vence, cands, comp }) {
   const totalDoLugar = cands.reduce((s, x) => s + (x.mun[id] || 0), 0);
   return html`<div class=${'muni' + (pinned ? ' pinned' : '')} aria-live="polite">
     <div class="muni-head"><h3>${BYID[id].name}</h3>${pinned && html`<button type="button" class="link" onClick=${onClear}>Fechar</button>`}</div>
-    ${c && html`<p class="hint">Venceu: <strong>${titleCase(c.urna)}</strong> (${c.partido}) com ${nf.format(c.mun[id])} votos, ${pct(c.mun[id] / totalDoLugar)} dos nominais.</p>`}
+    ${c && html`<p class="hint">Mais votado: <strong>${titleCase(c.urna)}</strong> (${c.partido}) com ${nf.format(c.mun[id])} votos, ${pct(c.mun[id] / totalDoLugar)} dos nominais.</p>`}
     ${n && html`<dl><div><dt>Abstenção</dt><dd>${pct((n[0] - n[1]) / n[0])}</dd></div>
       <div><dt>Brancos</dt><dd>${n[1] ? pct(n[2] / n[1]) : '—'}</dd></div><div><dt>Nulos</dt><dd>${n[1] ? pct(n[3] / n[1]) : '—'}</dd></div></dl>`}
   </div>`;
@@ -666,7 +678,7 @@ function App() {
     window.scrollTo(0, 0);
   };
   const botaoDeModo = ([m, rotulo]) => html`<button type="button" role="radio" aria-checked=${modo === m} onClick=${() => trocarModo(m)}>${rotulo}</button>`;
-  const seletorDeModo = html`<div class="seg modo" role="radiogroup" aria-label="O que ver"><span class="grupo-modo primeiro" aria-hidden="true">Eleições</span>
+  const seletorDeModo = html`<div class="seg modo" role="radiogroup" aria-label="O que ver"><span class="grupo-modo primeiro" aria-hidden="true">Visão</span>
     ${botaoDeModo(['candidato', 'Candidato'])}${botaoDeModo(['panorama', 'Panorama do cargo'])}${botaoDeModo(['perfis', 'Perfil do estado'])}</div>`;
 
   return html`<div class=${'app' + (hasData || modo === 'perfis' ? '' : ' nodata') + (modo === 'perfis' ? ' com-perfis' : '')}>
@@ -681,9 +693,9 @@ function App() {
         <select value=${eleicao} onChange=${e => { setEleicao(e.target.value); setSelected(null); setCandKey(null); setComp(null); }}>
           ${indice.map(e => html`<option value=${e.id}>${rotuloEleicao(e)}</option>`)}
         </select></label>
-      ${hasData && html`<div class="chips" role="radiogroup" aria-label="Cargo">
+      ${hasData && html`<div class="grupo-filtro"><span class="rotulo-filtro" aria-hidden="true">Cargo</span><div class="chips" role="radiogroup" aria-label="Cargo">
         ${cargos.map(([cd, nm]) => html`<button type="button" role="radio" aria-checked=${cd === cargo} onClick=${() => { setCargo(cd); setSelected(null); setComp(null); }}>${cargoLabel(nm)}</button>`)}
-      </div>
+      </div></div>
       <${CandidatePicker} cands=${cands} value=${candKey} onPick=${k => { setCandKey(k); setModo('candidato'); setSelected(null); setComp(null); }} />`}
     </section>`}
 
