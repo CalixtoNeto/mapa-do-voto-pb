@@ -422,3 +422,8 @@ button.abre{cursor:pointer}
 .colunas .cv{font-size:11px; color:var(--muted); white-space:nowrap} .colunas .ultima .cv{color:var(--ink); font-weight:600}
 .colunas .cn{font-size:12px; color:var(--muted); border-top:1px solid var(--line); width:100%; text-align:center; padding-top:3px}
 .ranking.cmp .haltere{grid-area:hl}
+.pilha-fig{margin:0; display:flex; flex-direction:column; gap:8px}
+.pilha-fig .pilha{height:14px}
+.colunas.densa{gap:3px} .colunas.densa .cv{display:none} .colunas.densa .ultima .cv{display:block}
+.colunas .cn{min-height:1.2em}
+.posicoes li .haltere{grid-column:1 / 3}

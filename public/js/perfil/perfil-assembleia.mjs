@@ -2,9 +2,19 @@
 // lista dos deputados da legislatura, cada um com a sua página.
 import { nf, pct } from '../formato.mjs';
 import { ListaDeBarras } from '../componentes.mjs';
+import { Waffle } from '../graficos.mjs';
+import { gruposDeAssentos } from '../calculos-graficos.mjs';
 import { taxa, slug, vereadoresEmOrdem } from './calculos-perfil.mjs';
 import { Voltar, Topo, Estatisticas, Secao, ano } from './pecas.mjs';
 const { html } = window.htmPreact;
+
+function Cadeiras({ deputados }) {
+  const contagem = new Map();
+  deputados.filter(v => v.emExercicio).forEach(v => contagem.set(v.partido || 'Sem partido', (contagem.get(v.partido || 'Sem partido') || 0) + 1));
+  const grupos = gruposDeAssentos([...contagem].map(([partido, eleitos]) => ({ partido, eleitos })), ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)'], 'var(--s0)');
+  const total = grupos.reduce((s, g) => s + g.n, 0);
+  return total ? html`<${Waffle} grupos=${grupos} descricao=${`${total} deputados em exercício: ${grupos.map(g => `${g.nome} ${g.n}`).join(', ')}`} />` : null;
+}
 
 export function ListaDeDeputados({ deputados }) {
   return html`<ul class="lista-perfis">${vereadoresEmOrdem(deputados).map(v => html`<li><a href=${'#perfil/' + slug(v.nome)} class=${v.emExercicio ? '' : 'fora'}>
@@ -24,7 +34,7 @@ export function PerfilAssembleia({ assembleia: a }) {
     <${Topo} titulo="Assembleia Legislativa da Paraíba" linhas=${[`${a.legislatura.numero}ª legislatura · ${ano(a.legislatura.inicio)}–${ano(a.legislatura.fim)}`]} />
     <${Estatisticas} itens=${[{ rotulo: 'Sessões realizadas (com presença ou voto registrado)', valor: nf.format(a.sessoes) }, { rotulo: 'Votações nominais registradas', valor: nf.format(a.votacoesNominais) },
       { rotulo: 'Deputados em exercício', valor: nf.format(a.vereadores.filter(v => v.emExercicio).length) }]} />
-    <${Secao} id="ad" titulo="Deputados estaduais"><${ListaDeDeputados} deputados=${a.vereadores} /><//>
+    <${Secao} id="ad" titulo="Deputados estaduais"><${Cadeiras} deputados=${a.vereadores} /><${ListaDeDeputados} deputados=${a.vereadores} /><//>
     <${Secao} id="ap" titulo="Presença nas sessões"><${Presencas} deputados=${a.vereadores} />
       <p class="hint">Sessões em que o deputado tem presença registrada no SAPL ou votou (sim, não ou abstenção), desde o início do mandato de cada um. O registro de presença do SAPL tem falhas; licenças e missões oficiais podem aparecer como ausência.</p><//>
     <p class="hint">Fonte: SAPL da Assembleia Legislativa da Paraíba (sessões, presença, votos nominais e matérias). Votações simbólicas só registram o resultado, não o voto de cada deputado.</p>
