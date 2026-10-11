@@ -1,4 +1,4 @@
-# Mapa do voto · Paraíba
+# Mapa da política · Paraíba
 
 Site estático (`public/`) com dados gerados por `scripts/gerar-dados.mjs` a partir do TSE.
 
@@ -25,6 +25,21 @@ Site estático (`public/`) com dados gerados por `scripts/gerar-dados.mjs` a par
   `fornecedores` (`n`, `t`, `v`, `c`) em finanças; `g`, `r`, `i`, `e`, `o`, `re`, `s`, `p`, `b`, `bt` no perfil;
   `[aptos, comparecimento, brancos, nulos, legenda?]` no comparecimento; `[eleitores, mulheres, jovens, idosos,
   superior, pouco estudo]` no eleitorado. Em `doa` e `fo`, o último número é o índice na lista do arquivo.
+
+## Perfil do estado
+
+- `scripts/gerar-perfis.mjs` gera `public/data/perfis/estado-ANO.json` e `estado-ANO-detalhe.json` (árvores, lidas só quando o
+  ano é aberto) pela API do Governo da Paraíba (`scripts/fontes/api-pb.mjs`, paginada de 1.000 em 1.000); as regras ficam em
+  `scripts/estado/`, testadas em `test/unidade/estado.test.mjs`.
+- `scripts/perfis/{arvores,somas,cruzamentos,campanhas}.mjs` e `scripts/lib/documento.mjs` são iguais aos do repositório de
+  Bayeux; os módulos de `public/js/perfil/` vieram de lá e mudam só no que é do estado (`perfil-estado.mjs`, `pagina-perfis.mjs`,
+  `dados-perfil.mjs` e os textos de `alertas.mjs`).
+- A Assembleia vem do SAPL da ALPB (`scripts/fontes/assembleia.mjs`, filtrado pela legislatura atual) e usa as mesmas regras da
+  Câmara de Bayeux (`scripts/perfis/{camara,votacoes,autorias}.mjs` e `scripts/fontes/sapl.mjs`, iguais nos dois repositórios);
+  no JSON os deputados ficam em `vereadores` (o formato de `resumoDaCamara`).
+- Nunca publique CPF inteiro: use `documentoPublico` (CNPJ inteiro, CPF mascarado) e, para cruzar, `documentoParaCruzar`.
+  A folha só vai agregada (tipo de cargo e órgão), sem nomes.
+- Alerta é conta do site: títulos descritivos ("valores atípicos"), nunca "irregular" ou citação de lei junto do dado.
 
 ## Como o código está organizado
 

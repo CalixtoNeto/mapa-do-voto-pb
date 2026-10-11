@@ -1,6 +1,7 @@
 // Golden master do gerador: roda o script inteiro num cenário fixo e compara a saída com o que está
 // gravado em test/fixtures/esperado/. Para regravar depois de uma mudança intencional:
 //   ATUALIZAR_ESPERADO=1 npm test
+import { pathToFileURL } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -23,7 +24,7 @@ function semDatasDeGeracao(json) {
 
 function rodarGerador(pasta) {
   execFileSync(process.execPath, [
-    '--import', join(RAIZ, 'test/fixtures/fetch-falso.mjs'),
+    '--import', pathToFileURL(join(RAIZ, 'test/fixtures/fetch-falso.mjs')).href,
     join(RAIZ, 'scripts/gerar-dados.mjs'), '2022', '--forcar',
   ], { cwd: pasta, env: { ...process.env, API_FALSA: join(pasta, 'api-falsa.json') }, stdio: 'pipe' });
 }

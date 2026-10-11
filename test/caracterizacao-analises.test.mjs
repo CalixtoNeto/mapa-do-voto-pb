@@ -1,5 +1,6 @@
 // Golden master do gerador de análises, no mesmo cenário de 2022 do gerador de votação.
 // Para regravar depois de uma mudança intencional: ATUALIZAR_ESPERADO=1 npm test
+import { pathToFileURL } from 'node:url';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
@@ -21,7 +22,7 @@ function semDataDeGeracao(json) {
 }
 
 function rodar(pasta, script) {
-  execFileSync(process.execPath, ['--import', join(RAIZ, 'test/fixtures/fetch-falso.mjs'), join(RAIZ, script), '2022', '--forcar'],
+  execFileSync(process.execPath, ['--import', pathToFileURL(join(RAIZ, 'test/fixtures/fetch-falso.mjs')).href, join(RAIZ, script), '2022', '--forcar'],
     { cwd: pasta, env: { ...process.env, API_FALSA: join(pasta, 'api-falsa.json') }, stdio: 'pipe' });
 }
 

@@ -1,18 +1,18 @@
-Site: https://calixtoneto.github.io/mapa-do-voto-pb/
+Site: https://pb.mapadapolitica.com.br/
 
-# Mapa do voto · Paraíba
+# Mapa da política · Paraíba
 
 Votos de candidatos a presidente, governador, senador, deputado federal e deputado estadual em cada um dos 223 municípios da Paraíba, a partir dos resultados oficiais do TSE.
 
 ## Como usar
 
-![Escolhendo a eleição e o cargo, buscando um candidato, vendo o mapa e os votos por escola em João Pessoa](docs/uso.gif)
+![Escolhendo a eleição e o cargo, buscando um candidato, trocando entre votos e % no município e vendo os votos por local de votação](docs/uso.gif)
 
 Abra o site: ele lista todas as eleições disponíveis sozinho, sem precisar baixar nem enviar arquivos. Escolha a eleição (ano e turno), o cargo e o candidato. Clique num município para ver os números e, quando existir, os votos em cada local de votação (escola).
 
 ## Comparar a evolução de um candidato
 
-![Comparando a votação de Hugo Motta em 2018 e 2022](docs/comparar.gif)
+![Comparando a votação de Hugo Motta em 2014 e 2022: mapa da variação, por votos e por parcela, e o ranking dos municípios](docs/comparar.gif)
 
 Quando o candidato disputou mais de uma eleição, a seção **Evolução do candidato** mostra os votos dele em cada uma, com a parcela dos votos nominais e a posição. A ligação entre eleições é feita pelo nome completo no TSE, inclusive entre cargos diferentes (por exemplo, vereador em 2016 e deputado em 2018).
 
@@ -26,21 +26,21 @@ Além do mapa de votos, cada candidato e cada cargo têm análises tiradas dos D
 
 **Na ficha do candidato** (botão *Candidato*):
 
-![Análises da ficha de Hugo Motta (deputado federal, 2022): força do voto, dinheiro da campanha, doadores e fornecedores, evolução patrimonial e dobradinhas](docs/candidato.gif)
+![Análises da ficha de Hugo Motta (deputado federal, 2022): força do voto, dinheiro da campanha em árvore até cada fornecedor, quem doou, bens declarados e votação com distribuição parecida](docs/candidato.gif)
 
-- **Fora da curva**: o que destoa na campanha em relação aos outros candidatos ao mesmo cargo na mesma eleição: uma categoria de gasto (combustível, impressos, veículos…) ou o custo por voto 3 vezes ou mais a mediana dos outros, recursos próprios acima dos bens declarados, um só doador ou fornecedor com metade ou mais do dinheiro, quem doou e também recebeu da campanha e despesas que ficaram sem pagar. Comportamento fora da curva **não é irregularidade**, e o painel diz isso antes da lista.
-- **Dinheiro da campanha**: quanto recebeu, quanto declarou ter gasto, **custo por voto**, quanto veio do **fundo eleitoral** e a origem do dinheiro (fundo eleitoral, fundo partidário e partido, doações, recursos próprios e de outros candidatos); a **posição entre os candidatos do cargo** no recebido, no gasto e no fundo eleitoral, com a mediana do cargo; **para onde foi o dinheiro** (todas as categorias de despesa, numa árvore que abre cada categoria até quem recebeu); **quem doou** (os dez maiores doadores, com a parcela de cada um no recebido); quanto **ficou sem pagar**, quanto veio do **maior doador** e de **recursos próprios**; **doadores e fornecedores em comum** com outras campanhas; **quando o dinheiro chegou** (por semana); e o dinheiro da mesma pessoa **em cada eleição** (recebido, gasto, votos e custo por voto).
+- **Valores distantes da mediana do cargo**: o que destoa na campanha em relação aos outros candidatos ao mesmo cargo na mesma eleição: uma categoria de gasto (combustível, impressos, veículos…) ou o custo por voto 3 vezes ou mais a mediana dos outros, recursos próprios acima dos bens declarados, um só doador ou fornecedor com metade ou mais do dinheiro, quem doou e também recebeu da campanha e despesas que ficaram sem pagar. É uma comparação estatística, sem juízo sobre as contas, e o painel diz isso antes da lista (com as causas legítimas mais comuns).
+- **Dinheiro da campanha**: quanto recebeu, quanto declarou ter gasto, **custo por voto**, quanto veio do **fundo eleitoral** e a origem do dinheiro (fundo eleitoral, fundo partidário e partido, doações, recursos próprios e de outros candidatos); a **posição entre os candidatos do cargo** no recebido, no gasto e no fundo eleitoral, com a mediana do cargo; **para onde foi o dinheiro** (todas as categorias de despesa, numa árvore que abre cada categoria até todos os fornecedores); **quem doou** (os dez maiores doadores, com a parcela de cada um no recebido); quanto **ficou sem pagar**, quanto veio do **maior doador** e de **recursos próprios**; **doadores e fornecedores em comum** com outras campanhas; **quando o dinheiro chegou** (por semana); e o dinheiro da mesma pessoa **em cada eleição** (recebido, gasto, votos e custo por voto).
 - **Quem é**: gênero, cor ou raça, idade, escolaridade, ocupação, se tentou a reeleição, a situação final e o total de bens declarados.
-- **Evolução patrimonial**: bens declarados em cada eleição, a variação entre elas (no total e por ano), **de que são os bens** (casa, veículos, aplicações…) e quanto o candidato pôs na própria campanha.
+- **Bens declarados ao TSE**: bens declarados em cada eleição, a variação entre elas (no total e por ano), **de que são os bens** (casa, veículos, aplicações…) e quanto o candidato pôs na própria campanha.
 - **Força do voto**: nos cargos proporcionais, a parcela do **quociente eleitoral** e dos votos do partido, e a distância entre o eleito menos votado e o não eleito mais votado; os municípios **onde vai melhor** do que no conjunto; e o **perfil do eleitorado** (mulheres, jovens, idosos, escolaridade) dos municípios de onde vêm os votos.
 - **Concentração do voto**: de quantos municípios veio metade dos votos e o número efetivo de municípios (voto de reduto ou espalhado).
 - **Dobradinhas prováveis**: para cada outro cargo da mesma eleição (e, para senador, os outros senadores), os candidatos cuja votação sobe e desce nos mesmos municípios. Em cargos com poucos candidatos (governador, senador, prefeito) aparecem todos, inclusive os que andam ao contrário; nos outros, os cinco mais parecidos. Cada um traz a força da correlação (fraca, moderada ou forte).
 
 **No panorama do cargo** (botão *Panorama do cargo*):
 
-![Panorama de deputado federal em 2022: quem venceu, abstenção, gasto × votos, o dinheiro elege?, partidos, fundo eleitoral, perfil, concentração e análises por lugar](docs/panorama.gif)
+![Panorama de deputado federal em 2022: mais votado, abstenção, a tabela do mapa, gasto × votos, partidos em hierarquia (partido → candidatos) e análises por município](docs/panorama.gif)
 
-- Mapa de **quem venceu** em cada município e de **abstenção, brancos e nulos**, com os totais do estado.
+- Mapa do **mais votado** em cada município e de **abstenção, brancos e nulos**, com os totais do estado.
 - **Gasto × votos** de todos os candidatos, com diagonais de custo por voto, e rankings de menor e maior custo por voto, mais fundo eleitoral, mais dinheiro recebido e maior gasto.
 - **Fundo eleitoral por partido**, com a parcela para mulheres e para pessoas negras (pretas e pardas) e um aviso quando a parcela das mulheres fica abaixo de 30%.
 - **Quem disputou e quem se elegeu**: gênero e cor ou raça de candidatos e eleitos.
@@ -64,7 +64,7 @@ Cuidados que o site mostra junto dos números:
 - O **quociente eleitoral** soma os votos de legenda quando o arquivo do TSE traz; senão, o site avisa que a conta é sem legenda. As vagas são os eleitos do cargo no cadastro do TSE.
 - **Doadores e fornecedores em comum** mostram quem se liga a mais de uma campanha, não irregularidade nem acordo.
 - **Bens** são valores nominais, sem correção pela inflação; a ligação entre eleições é pelo nome completo, como na evolução do candidato.
-- No mapa de quem venceu, só os três candidatos que mais venceram têm cor própria; com mais cores elas deixam de ser distinguíveis, inclusive para daltônicos.
+- No mapa do mais votado, só os três candidatos mais votados em mais lugares têm cor própria; com mais cores elas deixam de ser distinguíveis, inclusive para daltônicos.
 
 ### De onde vêm as análises
 
@@ -81,6 +81,23 @@ O gerador `scripts/gerar-analises.mjs` grava, ao lado dos arquivos de votação:
 | `dinheiro.json` | — | Recebido, gasto e votos da mesma pessoa em cada eleição |
 
 Para gerar ou atualizar: **Actions → Gerar análises → Run workflow** (em branco, refaz todos os anos; ou informe, por exemplo, `2022 2026`). O workflow **Atualizar dados de uma eleição** também gera as análises do ano. Localmente: `npm run analises -- 2022`.
+
+## Perfil do estado
+
+![Perfil do estado: Governo da Paraíba (para onde foi o dinheiro em árvore, valores atípicos, folha e emendas estaduais), Assembleia Legislativa e a página de um deputado](docs/perfil.gif)
+
+Em **Perfil do estado** (ou direto em `#perfis`), o Governo da Paraíba em cada ano desde 2023, pela [API de dados abertos do Governo da Paraíba](https://api.dados.pb.gov.br/swagger/), tudo em árvore (o total que se abre até quem recebeu):
+
+- **Para onde foi o dinheiro**: por área (área → tipo de despesa → credor), por órgão e pela origem do dinheiro (fonte → área → credor). As despesas orçamentárias vêm mês a mês; somando os meses, sai o pago no ano.
+- **Valores atípicos nas compras**: meses com mais de 3 vezes a mediana mensal de um tipo de compra (e R$ 5 milhões ou mais), tipos de compra de R$ 20 milhões ou mais com 70% ou mais num fornecedor e tipos de compra que dobraram de um ano para o outro. São contas do site, sem juízo sobre as despesas. As despesas do estado não trazem a modalidade de licitação, então não há a conta "sem licitação".
+- **Folha de pessoal**: o último mês publicado do ano, tipo de cargo → órgão, com o valor bruto e o número de vínculos. Nome e CPF dos servidores não vão para o site.
+- **Licitações e contratos**: contratações por modalidade → órgão (valor adjudicado) e os maiores contratados.
+- **Emendas parlamentares estaduais**: deputado → secretaria → objeto, pelo valor indicado.
+- **Doadores e fornecedores de campanhas estaduais** (governador e deputado estadual, 2018 e 2022) **que também receberam do estado**, cruzados pelo documento (CNPJ; para pessoa física, os dígitos centrais do CPF e o nome). Bancos, Correios e concessionárias de serviço público ficam de fora.
+
+**Assembleia Legislativa** (`#perfil/assembleia`) e uma página para cada deputado estadual (`#perfil/nome-do-deputado`), pelo [SAPL da ALPB](https://sapl.al.pb.leg.br/), na legislatura atual: presença nas sessões, votos nominais (sim, não, abstenção, quantas vezes votou com a maioria), com quem mais e menos vota junto, matérias de autoria por tipo e as mais recentes (com link para o SAPL), partidos, votos em 2022 (com link para o mapa) e os doadores e fornecedores da campanha que também receberam do estado. A ligação do deputado com a candidatura é pelo nome completo (o SAPL não traz o CPF). Votar junto não indica acordo político; votações simbólicas só registram o resultado.
+
+Para gerar ou atualizar: **Actions → Atualizar perfis → Run workflow** (roda sozinho todo dia 10). Localmente: `node scripts/gerar-perfis.mjs 2025` (cerca de 1 minuto por ano do governo; a Assembleia leva cerca de meia hora, `--sem-assembleia` pula e `--so-assembleia` faz só ela).
 
 ## De onde vêm os dados
 
