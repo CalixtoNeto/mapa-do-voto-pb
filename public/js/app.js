@@ -266,11 +266,6 @@ function Legend({ classes, metric, view, modoVar }) {
 function MuniCard({ view, id, pinned, onClear, det, linha }) {
   if (!view || !id) return html`<p class="hint">${view ? 'Toque ou clique num município para ver os números.' : ''}</p>`;
   const m = BYID[id]; const v = view.votos[id] || 0, t = view.tot[id] || 0, r = view.rank && view.rank[id];
-  const dados = det && det.dados;
-  const locs = dados && dados.locais[id];
-  const votos = (dados && dados.votos[view.cargo + '|' + view.nr] || {})[id] || {};
-  const rows = locs ? locs.map((l, i) => ({ n: l.n, v: votos[i] || 0 })).sort((a, b) => b.v - a.v || a.n.localeCompare(b.n, 'pt-BR')) : [];
-  const max = Math.max(1, ...rows.map(x => x.v));
   return html`<div class=${'muni' + (pinned ? ' pinned' : '')} aria-live="polite">
     <div class="muni-head"><h3>${m.name}</h3>${pinned ? html`<button type="button" class="link" onClick=${onClear}>Fixado · toque de novo para soltar</button>` : html`<span class="hint">Toque para fixar</span>`}</div>
     <dl>
@@ -283,14 +278,6 @@ function MuniCard({ view, id, pinned, onClear, det, linha }) {
       <div><dt>Variação de votos</dt><dd class=${linha.d > 0 ? 'up' : linha.d < 0 ? 'down' : ''}>${dv(linha.d)}</dd></div>
       <div><dt>Parcela no município</dt><dd class=${linha.dp > 0 ? 'up' : linha.dp < 0 ? 'down' : ''}>${pp(linha.dp)}</dd></div>
     </dl>`}
-    ${det && det.estado === 'carregando' && html`<p class="hint">Carregando os locais de votação…</p>`}
-    ${det && det.estado === 'ok' && (rows.length ? html`<details><summary>Votos por local de votação (${rows.length})</summary>
-        <ul class="locais" aria-label="Votos por local de votação">
-          ${rows.map(x => html`<li><span class="ln">${localNome(x.n)}</span><span class="lv">${nf.format(x.v)}</span>
-            <span class="bar" aria-hidden="true"><i style=${`width:${(x.v / max * 100).toFixed(1)}%`}></i></span></li>`)}
-        </ul></details>`
-      : html`<p class="hint">Sem detalhe por local de votação para este candidato neste município.</p>`)}
-    ${det && det.estado === 'indisponivel' && pinned && html`<p class="hint">O detalhe por local de votação não está disponível para esta eleição.</p>`}
   </div>`;
 }
 
@@ -373,37 +360,36 @@ function CandidatePicker({ cands, value, onPick }) {
   </div>`;
 }
 
-function Ranking({ view, metric, selected, onSelect }) {
+// Locais de votação de um município (carregados sob demanda, ao abrir a linha): [{ nome, v, t }] ou o aviso do que falta.
+function locaisDoMunicipio(det, view, id) {
+  if (!det || det.estado === 'carregando') return [['Carregando os locais de votação…', null]];
+  if (det.estado === 'indisponivel') return [['O detalhe por local de votação não está disponível para esta eleição.', null]];
+  const locs = det.dados && det.dados.locais[id], votos = (det.dados && det.dados.votos[view.cargo + '|' + view.nr] || {})[id] || {};
+  const lista = (locs || []).map((l, i) => [localNome(l.n), votos[i] || 0, null, '']).filter(l => l[1] > 0);
+  return lista.length ? lista : [['Sem detalhe por local de votação para este candidato neste município.', null]];
+}
+
+function Ranking({ view, metric, selected, onSelect, det }) {
   const [sort, setSort] = useState('votos'); const [q, setQ] = useState('');
   useEffect(() => setSort(metric), [metric]);
-  const rows = useMemo(() => {
-    if (!view) return [];
-    let r = MUNIS.map(m => ({ id: m.id, name: m.name, v: view.votos[m.id] || 0, p: metricOf(view, m.id, 'pct'), rk: view.rank ? view.rank[m.id] : null }));
-    if (sort === 'votos') r.sort((a, b) => b.v - a.v || a.name.localeCompare(b.name)); else if (sort === 'pct') r.sort((a, b) => b.p - a.p || b.v - a.v); else r.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
-    r.forEach((x, i) => x.pos = i + 1);
-    const nq = NORM(q); return nq ? r.filter(x => NORM(x.name).includes(nq)) : r;
-  }, [view, sort, q]);
+  const arvore = useMemo(() => {
+    if (!view) return null;
+    const nq = NORM(q), munis = MUNIS.filter(m => !nq || NORM(m.name).includes(nq));
+    const base = AN.arvoreDosLugares(munis.map(m => ({ key: m.id, name: m.name, v: view.votos[m.id] || 0, p: metricOf(view, m.id, 'pct'), locais: [] })), { ordem: sort, parcela: f => pct(f) });
+    return { ...base, filhos: base.filhos.map(f => [f[0], f[1], f[4] === selected ? locaisDoMunicipio(det, view, f[4]) : [['Toque para ver os locais de votação', null]], f[3], f[4]]) };
+  }, [view, sort, q, selected, det]);
   if (!view) return null;
-  const max = Math.max(1, ...MUNIS.map(m => sort === 'pct' ? metricOf(view, m.id, 'pct') : (view.votos[m.id] || 0)));
   return html`<section class="ranking" aria-label="Municípios">
     <div class="rk-head">
-      <span class="rotulo-pagina">Município · votos · % dos votos do município</span>
+      <span class="rotulo-pagina">Município → local de votação · votos · % dos votos</span>
       <select aria-label="Ordenar municípios" value=${sort} onChange=${e => setSort(e.target.value)}>
         <option value="votos">Mais votos</option><option value="pct">Maior percentual</option><option value="nome">Nome</option>
       </select>
     </div>
     <input type="search" class="filter" placeholder="Buscar município" value=${q} onInput=${e => setQ(e.target.value)} aria-label="Buscar município" />
-    <ol>
-      ${rows.map(x => html`<li key=${x.id} class=${x.id === selected ? 'on' : ''}>
-        <button type="button" onClick=${() => onSelect(x.id)}>
-          <span class="pos">${sort === 'nome' ? '' : x.pos}</span>
-          <span class="nm">${x.name}</span>
-          <span class="vv">${nf.format(x.v)}</span>
-          <span class="pp">${x.v ? pct(x.p) : '—'}</span>
-          <span class="bar" aria-hidden="true"><i style=${`width:${((sort === 'pct' ? x.p : x.v) / max * 100).toFixed(1)}%`}></i></span>
-        </button></li>`)}
-    </ol>
-    <${AN.ComoLer}><p>A barra compara ${sort === 'pct' ? 'a parcela do município (o maior valor ocupa a barra inteira)' : 'os votos (o maior valor ocupa a barra inteira)'}, não os dois números ao mesmo tempo. A linha em vermelho suave é o município fixado no mapa.</p><//>
+    <${AN.ArvoreDeBarras} arvore=${arvore} formato=${nf.format} escala="maior" ordenarRaiz=${false} mostrarTotal=${false}
+      rotulo=${nome => nome} ativo=${k => k === selected} aoAbrir=${k => k && onSelect(k)} />
+    <${AN.ComoLer}><p>Toque num município para abrir os locais de votação e fixá-lo no mapa. A barra compara com o maior da lista; o percentual é a parcela do candidato entre os votos nominais do município (ou do local).</p><//>
   </section>`;
 }
 
@@ -668,7 +654,7 @@ function App() {
   const alternarComparacao = e => { setComp(c => c && c.ano === e.ano && c.turno === e.turno && c.cargo === e.cargo && c.nr === e.nr ? null : e); setSelected(null); };
   const painelDoCandidato = () => ({
     municipios: html`<${Stats} view=${cmp ? null : view} />
-      ${cmp ? html`<${ComparaRanking} cmp=${cmp} selected=${selected} onSelect=${selectFromList} />` : html`<${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${selectFromList} />`}
+      ${cmp ? html`<${ComparaRanking} cmp=${cmp} selected=${selected} onSelect=${selectFromList} />` : html`<${Ranking} view=${view} metric=${metric} selected=${selected} onSelect=${setSelected} det=${det} />`}
       ${entradas.length > 1 && html`<${Trajetoria} entradas=${entradas} view=${view} comp=${comp} onComparar=${alternarComparacao} onSair=${() => setComp(null)} />`}`,
     forca: html`<${PAINEL.Concentracao} cand=${candAtual} /><${PAINEL.ForcaDoVoto} cand=${candAtual} ctx=${ctx} />`,
     dinheiro: html`<${PAINEL.Dinheiro} cand=${candAtual} financas=${an.financas} ano=${view.ano} linhasDoCargo=${linhasDoCargo} ctx=${ctx} onPick=${escolher} />

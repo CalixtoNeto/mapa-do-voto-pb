@@ -5,9 +5,12 @@ const ORGAO_PUBLICO = /^(secretaria|sec\.? de est|policia|corpo de bombeiros|tri
 const semAcento = s => String(s).normalize('NFD').replace(/[̀-ͯ]/g, '');
 const ehOrgaoPublico = nome => ORGAO_PUBLICO.test(semAcento(nome));
 
-// credores: [nome, documento, pago, vezes]; devolve os `quantos` maiores que não são órgãos públicos e quantos ficaram de fora.
+// credores: [nome, documento, pago, vezes] sem os órgãos públicos, no mesmo formato.
+export const semOrgaosPublicos = credores => credores.filter(c => !ehOrgaoPublico(c[0]));
+
+// Devolve os `quantos` maiores que não são órgãos públicos e quantos ficaram de fora.
 export function credoresPrivados(credores, quantos = 10) {
-  const privados = credores.filter(c => !ehOrgaoPublico(c[0])).sort((a, b) => b[2] - a[2]);
+  const privados = semOrgaosPublicos(credores).sort((a, b) => b[2] - a[2]);
   return { lista: privados.slice(0, quantos).map(([n, , v, vezes]) => ({ n, v, vezes })), fora: credores.length - privados.length };
 }
 

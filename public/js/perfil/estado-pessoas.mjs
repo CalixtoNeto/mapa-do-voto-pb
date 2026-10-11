@@ -4,19 +4,19 @@ import { Bloco } from '../estrutura.mjs';
 import { Cartao, Aviso } from '../cartao.mjs';
 import { Pilha } from '../graficos.mjs';
 import { Ranking } from '../ranking.mjs';
-import { ArvoreDeBarras } from '../arvore.mjs';
+import { usarLimite } from '../componentes.mjs';
+import { ArvoreComLegenda } from './arvore-legenda.mjs';
+import { arvoreDasModalidades, arvoreDosCredores } from './arvores-prefeitura.mjs';
 import { partesComResto } from '../calculos-graficos.mjs';
 import { mesAno } from './calculos-perfil.mjs';
-import { comParticipacao } from './calculos-fatias.mjs';
-import { credoresPrivados } from './calculos-estado.mjs';
+import { credoresPrivados, semOrgaosPublicos } from './calculos-estado.mjs';
 import { participacao } from './formato-perfil.mjs';
-import { Desdobrar } from './desdobrar.mjs';
 import { nomeProprio } from './pecas.mjs';
 const { html } = window.htmPreact;
 
 const CORES = ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)'];
 const arvoreDe = (detalhe, id) => detalhe?.arvores?.[id]?.v > 0 ? detalhe.arvores[id] : null;
-const rotuloDoVencedor = (nome, nivel) => nivel === 1 && !/^Outros \(/.test(nome) ? nomeProprio(nome) : sentence(nome);
+const rotuloDoCredor = (nome, nivel) => nivel === 0 ? nomeProprio(nome) : sentence(nome);
 
 function Folha({ a, detalhe }) {
   const total = a.folha.total, arvore = arvoreDe(detalhe, 'folha');
@@ -25,15 +25,14 @@ function Folha({ a, detalhe }) {
   return html`<${Cartao} tipo="Barra empilhada · composição" titulo="Folha por tipo de vínculo" sub=${`${dinheiro(total)} brutos em ${mesAno(a.folha.mes)}. Cada cor é uma parte do total.`}
     nota=${`Vínculos no mês (uma pessoa pode ter mais de um): ${maiores}. Nomes e CPFs dos servidores não aparecem no site.`}>
     <${Pilha} partes=${partes} descricao=${'Folha por tipo de vínculo: ' + partes.map(p => `${p.nome} ${p.rotulo}`).join('; ')} />
-    ${arvore && html`<${Desdobrar} titulo="Abrir por tipo de cargo e órgão"><${ArvoreDeBarras} arvore=${arvore} /><//>`}<//>`;
+    ${arvore && html`<${ArvoreComLegenda} legenda="Vínculo → órgão · R$" arvore=${arvore} escala="maior" />`}<//>`;
 }
 
 function Licitacoes({ a, detalhe }) {
-  const lista = comParticipacao(a.licitacoes.modalidades.map(([n, processos, v]) => ({ n, v, processos }))), total = lista.reduce((s, m) => s + m.v, 0);
-  const arvore = arvoreDe(detalhe, 'licitacoes');
-  return html`<${Cartao} tipo="Barra horizontal · ranking" titulo="Licitações por modalidade" sub=${`${dinheiro(total)} adjudicados nas contratações do ano. A barra compara o valor.`}>
-    <${Ranking} descricao="Licitações por modalidade" itens=${lista.map(m => ({ n: sentence(m.n), nota: `${nf.format(m.processos)} ${m.processos === 1 ? 'processo' : 'processos'}`, v: m.v, rotulo: dinheiro(m.v), lado: m.v ? participacao(m.v, total) : '—' }))} />
-    ${arvore && html`<${Desdobrar} titulo="Ver os órgãos, por modalidade"><${ArvoreDeBarras} arvore=${arvore} rotulo=${rotuloDoVencedor} /><//>`}<//>`;
+  const arvore = arvoreDasModalidades(a.licitacoes.modalidades, arvoreDe(detalhe, 'licitacoes'));
+  return html`<${Cartao} tipo="Árvore expansível" titulo="Licitações por modalidade" sub=${`${dinheiro(arvore.v)} adjudicados nas contratações do ano.`}
+    nota="A barra compara com o maior do mesmo nível; a nota mostra os processos e a parte de cada modalidade. Abaixo, os órgãos que contrataram.">
+    <${ArvoreComLegenda} legenda="Modalidade → órgão contratante · R$" arvore=${arvore} escala="maior" /><//>`;
 }
 
 function Contratados({ a }) {
@@ -42,10 +41,12 @@ function Contratados({ a }) {
     <${Ranking} descricao="Maiores contratados" itens=${itens} /><//>`;
 }
 
-function Credores({ a }) {
-  const { lista, fora } = credoresPrivados(a.despesas.credores, 40);
-  return html`<${Cartao} classe="largo" tipo="Barra horizontal · ranking" titulo="Maiores credores" sub=${`Valores pagos em ${a.ano}, sem contar ${fora} órgãos públicos da lista (secretarias, previdência, tribunais, prefeituras)`}>
-    <${Ranking} descricao="Maiores credores" itens=${lista.map(c => ({ n: nomeProprio(c.n), nota: c.vezes > 1 ? `${nf.format(c.vezes)} pagamentos` : null, v: c.v, rotulo: dinheiro(c.v) }))} />
+function Credores({ a, detalhe }) {
+  const fora = credoresPrivados(a.despesas.credores, 1).fora, arvore = arvoreDosCredores(semOrgaosPublicos(a.despesas.credores), arvoreDe(detalhe, 'area')), [limite, botao] = usarLimite(arvore.filhos.length);
+  return html`<${Cartao} classe="largo" tipo="Árvore expansível" titulo="Maiores credores" sub=${`Valores pagos em ${a.ano}, sem contar ${fora} órgãos públicos da lista (secretarias, previdência, tribunais, prefeituras)`}
+    nota="Abaixo de cada credor, a área e o tipo de despesa em que recebeu, pelo detalhamento do ano.">
+    <${ArvoreComLegenda} legenda="Credor → área → tipo de despesa · R$" arvore=${{ ...arvore, filhos: arvore.filhos.slice(0, limite) }} rotulo=${rotuloDoCredor}
+      rotuloDoTotal=${`Total dos ${arvore.filhos.length} maiores`} ordenarRaiz=${false} escala="maior" />${botao}
     <${Aviso}>Valores atípicos são contas do site sobre os dados do Governo da Paraíba, não julgamento sobre os fornecedores.<//><//>`;
 }
 
@@ -53,5 +54,5 @@ export function FolhaLicitacoesCredores({ a, detalhe }) {
   return html`<${Bloco} id="pf" titulo="Folha, licitações e quem recebe" colunas="tres"
     lede="A folha dividida por vínculo, as licitações por modalidade, os maiores contratados e quem mais recebeu do Governo.">
     ${a.folha && html`<${Folha} a=${a} detalhe=${detalhe} />`}${a.licitacoes?.modalidades.length > 0 && html`<${Licitacoes} a=${a} detalhe=${detalhe} />`}
-    ${a.licitacoes?.contratados?.length > 0 && html`<${Contratados} a=${a} />`}${a.despesas?.credores?.length > 0 && html`<${Credores} a=${a} />`}<//>`;
+    ${a.licitacoes?.contratados?.length > 0 && html`<${Contratados} a=${a} />`}${a.despesas?.credores?.length > 0 && html`<${Credores} a=${a} detalhe=${detalhe} />`}<//>`;
 }

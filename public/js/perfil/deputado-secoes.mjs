@@ -1,30 +1,39 @@
 // Seções da página de um deputado estadual: matérias de autoria, votos nominais, afinidade e partidos.
-import { pct, nf, sentence } from '../formato.mjs';
+import { pct, nf } from '../formato.mjs';
 import { Pilha } from '../graficos.mjs';
-import { Ranking } from '../ranking.mjs';
+import { ArvoreComLegenda } from './arvore-legenda.mjs';
+import { arvoreDeConcordancia, arvoreDasMaterias, rotuloDaMateria } from './arvores-camara.mjs';
 import { extremosDaAfinidade } from './calculos-perfil.mjs';
 import { Estatisticas, ano } from './pecas.mjs';
 const { html } = window.htmPreact;
 const SAPL = 'https://sapl.al.pb.leg.br';
 
+// Nas matérias recentes o rótulo é o link para o SAPL e a ementa; o "1" e a barra de cada matéria não dizem nada e ficam escondidos.
+const rotuloDasMaterias = recentes => {
+  const porRotulo = new Map(recentes.map(r => [rotuloDaMateria(r), r]));
+  return (nome, nivel) => {
+    const r = porRotulo.get(nome);
+    return nivel === 1 && r ? html`<a href=${`${SAPL}/materia/${r[0]}`} target="_blank" rel="noopener">${nome}</a><small>${r[4]}</small>` : nome;
+  };
+};
+
 export function Materias({ m }) {
   if (!m.total) return html`<p class="hint">Nenhuma matéria de autoria registrada no SAPL nesta legislatura.</p>`;
-  return html`<${Ranking} descricao="Matérias por tipo" itens=${m.porTipo.map(([tipo, n]) => ({ n: tipo, v: n, rotulo: nf.format(n) }))} />
-    <h4>Mais recentes</h4>
-    <ul class="materias">${m.recentes.map(([id, tipo, numero, a, ementa, data]) => html`<li>
-      <a href=${`${SAPL}/materia/${id}`} target="_blank" rel="noopener">${tipo} nº ${numero}/${a}</a>
-      <small>${data ? data.split('-').reverse().join('/') : ''}</small><p>${sentence(ementa)}</p></li>`)}</ul>`;
+  return html`<div class="arvore-materias"><${ArvoreComLegenda} legenda=${`Tipo → matérias mais recentes (as ${m.recentes.length} últimas de ${nf.format(m.total)})`}
+    arvore=${arvoreDasMaterias(m.porTipo, m.recentes, m.total)} formato=${nf.format} mostrarTotal=${false} rotulo=${rotuloDasMaterias(m.recentes)} /></div>`;
 }
 
 function Afinidade({ titulo, itens, nomes }) {
-  return itens.length ? html`<h4>${titulo}</h4><${Ranking} descricao=${titulo} itens=${itens.map(([id, iguais, comuns]) =>
-    ({ n: nomes.get(id) || '?', v: iguais / comuns, rotulo: pct(iguais / comuns, 0), lado: `${iguais} de ${comuns}` }))} />` : null;
+  const arvore = arvoreDeConcordancia(itens.map(([id, iguais, comuns]) => ({ nome: nomes.get(id) || '?', parte: iguais, total: comuns })), ['Votaram igual', 'Votaram diferente']);
+  return itens.length ? html`<h4>${titulo}</h4><${ArvoreComLegenda} legenda="Deputado → votos iguais e diferentes · % das votações em comum"
+    arvore=${arvore} formato=${v => pct(v, 0)} escala="maior" ordenarRaiz=${false} mostrarTotal=${false} rotulo=${nome => nome} />` : null;
 }
 
+// A afinidade também lista deputados de legislaturas anteriores, que não estão na lista da Assembleia e ficariam sem nome.
 export function Votacoes({ v, nomes }) {
   const t = v.votacoes, total = t.sim + t.nao + t.abstencao + t.outros;
   if (!total) return html`<p class="hint">Nenhum voto nominal registrado no SAPL para este deputado. Votações simbólicas só registram o resultado.</p>`;
-  const { mais, menos } = extremosDaAfinidade(v.afinidade);
+  const { mais, menos } = extremosDaAfinidade(v.afinidade.filter(a => nomes.has(a[0])));
   const partes = [['Sim', t.sim, 'var(--s1)'], ['Não', t.nao, 'var(--s2)'], ['Abstenção', t.abstencao, 'var(--s3)'], ['Outros', t.outros, 'var(--s4)']]
     .filter(p => p[1] > 0).map(([nome, n, cor]) => ({ nome, v: n, cor, rotulo: `${nf.format(n)} · ${pct(n / total, 0)}` }));
   return html`<${Pilha} partes=${partes} descricao=${'Votos nominais: ' + partes.map(p => `${p.nome} ${p.rotulo}`).join('; ')} />

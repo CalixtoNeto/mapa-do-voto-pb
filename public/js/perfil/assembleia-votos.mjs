@@ -5,7 +5,8 @@ import { Cartao } from '../cartao.mjs';
 import { Pilhas100 } from '../colunas-pilhas.mjs';
 import { Rosca } from '../graficos.mjs';
 import { Dispersao } from '../dispersao.mjs';
-import { Ranking } from '../ranking.mjs';
+import { ArvoreComLegenda } from './arvore-legenda.mjs';
+import { arvoreDeConcordancia } from './arvores-camara.mjs';
 import { Legenda } from '../legenda.mjs';
 import { slug } from './calculos-perfil.mjs';
 import { votosPorVereador, totalDeVotos, alinhamentos, presencaXAlinhamento } from './calculos-camara.mjs';
@@ -36,11 +37,14 @@ export function ComoVotam({ deputados, votacoes }) {
     <${VotosPorDeputado} linhas=${linhas} total=${votacoes} /><${TotalDeVotos} t=${totalDeVotos(linhas)} /><//>`;
 }
 
+const linkDoDeputado = nome => html`<a href=${'#perfil/' + slug(nome)}>${nome}</a>`;
+
 function Alinhamento({ deputados }) {
-  const lista = alinhamentos(deputados);
-  return html`<${Cartao} tipo="Barra horizontal · ranking" titulo="Alinhamento com a maioria" sub="Não diz quem está certo: só quem votou junto com a maioria da Assembleia."
-    nota="A barra mede votações em que votou como a maioria sobre as votações em que a maioria se formou e ele votou.">
-    <${Ranking} descricao="Alinhamento de cada deputado com a maioria" itens=${lista.map(l => ({ n: html`<a href=${'#perfil/' + slug(l.nome)}>${l.nome}</a>`, v: l.fracao, rotulo: pct0(l.fracao), lado: `${l.com} de ${l.de}` }))} /><//>`;
+  const arvore = arvoreDeConcordancia(alinhamentos(deputados).map(l => ({ nome: l.nome, parte: l.com, total: l.de })), ['Com a maioria', 'Contra a maioria']);
+  return html`<${Cartao} tipo="Árvore expansível · ranking" titulo="Alinhamento com a maioria" sub="Não diz quem está certo: só quem votou junto com a maioria da Assembleia."
+    nota="Em cada deputado, a parte das votações em que a maioria se formou e ele votou: com a maioria e contra ela. O nome leva ao perfil.">
+    <${ArvoreComLegenda} legenda="Deputado → com e contra a maioria · % das votações" arvore=${arvore} formato=${pct0} escala="maior" mostrarTotal=${false}
+      rotulo=${(nome, nivel) => nivel === 0 ? linkDoDeputado(nome) : nome} /><//>`;
 }
 
 function PresencaEAlinhamento({ deputados }) {

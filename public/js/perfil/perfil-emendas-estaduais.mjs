@@ -5,14 +5,13 @@ import { Bloco } from '../estrutura.mjs';
 import { Cartao, Aviso } from '../cartao.mjs';
 import { Treemap } from '../treemap.mjs';
 import { Colunas } from '../graficos.mjs';
-import { Ranking } from '../ranking.mjs';
-import { ArvoreDeBarras } from '../arvore.mjs';
+import { ArvoreComLegenda } from './arvore-legenda.mjs';
+import { arvoreDosAutores, arvoreDasSecretarias, encurtar } from './arvores-estado.mjs';
 import { agruparPequenos } from './calculos-fatias.mjs';
 import { slug } from './calculos-perfil.mjs';
 import { resumoDasEmendas, emendasPorSecretaria, serieDeEmendas, deputadoDoAutor } from './calculos-estado.mjs';
 import { milhoes } from './formato-perfil.mjs';
 import { CabecalhoDoPerfil, SeletorDeAno } from './cabecalho-perfil.mjs';
-import { Desdobrar } from './desdobrar.mjs';
 import { nomeProprio } from './pecas.mjs';
 import { usarDetalhe } from './dados-perfil.mjs';
 const { html, useState } = window.htmPreact;
@@ -35,20 +34,27 @@ function PorSecretaria({ a, detalhe }) {
     ${itens.length > 0 ? html`<${Treemap} itens=${itens} formato=${dinheiro} altura=${340} descricao=${`Emendas indicadas por secretaria em ${a.ano}`} />` : html`<p class="hint">Carregando…</p>`}<//>`;
 }
 
-function Autores({ a, deputados }) {
-  const itens = [...a.emendas.porDeputado].sort((x, y) => y[1] - x[1]).map(([nome, v, n]) => {
-    const d = deputadoDoAutor(nome, deputados), rotulo = nomeProprio(nome);
-    return { n: d ? html`<a href=${'#perfil/' + slug(d.nome)}>${rotulo}</a>` : rotulo, nota: `${nf.format(n)} ${n === 1 ? 'emenda' : 'emendas'}`, v, rotulo: dinheiro(v), lado: pct(v / a.emendas.total, 1) };
-  });
-  return html`<${Cartao} tipo="Barra horizontal · ranking" titulo="Quem indicou" sub=${`Valor indicado por cada deputado em ${a.ano}. A barra compara o valor.`}
-    nota="Quando o nome do autor bate com o de um deputado da Assembleia, ele leva ao perfil.">
-    <${Ranking} descricao="Valor indicado por deputado" itens=${itens} /><//>`;
+const objeto = nome => html`<span title=${sentence(nome)}>${encurtar(sentence(nome), 130)}</span>`;
+const arvoreDe = detalhe => detalhe?.arvores?.emendasEstaduais?.v > 0 ? detalhe.arvores.emendasEstaduais : null;
+
+function Autores({ a, detalhe, deputados }) {
+  const arvore = arvoreDosAutores(a.emendas.porDeputado, arvoreDe(detalhe)), nomeDoAutor = nome => {
+    const d = deputadoDoAutor(nome, deputados);
+    return d ? html`<a href=${'#perfil/' + slug(d.nome)}>${nomeProprio(nome)}</a>` : nomeProprio(nome);
+  };
+  return html`<${Cartao} tipo="Árvore expansível" titulo="Quem indicou" sub=${`${dinheiro(arvore.v)} indicados em ${a.ano}, por deputado.`}
+    nota="Quando o nome do autor bate com o de um deputado da Assembleia, ele leva ao perfil. Abaixo de cada deputado, as secretarias e o objeto de cada emenda.">
+    <${ArvoreComLegenda} legenda="Deputado → secretaria → objeto da emenda · R$" arvore=${arvore} escala="maior" ordenarRaiz=${false} mostrarTotal=${false}
+      rotulo=${(nome, nivel) => nivel === 0 ? nomeDoAutor(nome) : nivel === 1 ? sentence(nome) : objeto(nome)} />
+    ${!arvoreDe(detalhe) && html`<p class="hint">Carregando as secretarias e os objetos…</p>`}<//>`;
 }
 
-function Arvore({ detalhe }) {
-  const arvore = detalhe?.arvores?.emendasEstaduais;
-  return html`<${Cartao} classe="largo" tipo="Árvore expansível" titulo="Abra um deputado" sub="Deputado → secretaria → objeto da emenda. Toque num item para abrir.">
-    ${arvore?.v > 0 ? html`<${Desdobrar} titulo=${`Abrir os ${arvore.filhos.length} deputados`}><div class="arvore"><${ArvoreDeBarras} arvore=${arvore} rotulo=${(nome, nivel) => nivel === 0 ? nomeProprio(nome) : sentence(nome)} /></div><//>` : html`<p class="hint">Carregando…</p>`}<//>`;
+function PelaSecretaria({ a, detalhe }) {
+  const arvore = arvoreDasSecretarias(arvoreDe(detalhe));
+  return html`<${Cartao} tipo="Árvore expansível" titulo="Quem indicou, por secretaria" sub=${`A mesma conta de ${a.ano} vista de quem vai executar.`}
+    nota="A emenda indica o valor e a secretaria que vai executar. Abaixo de cada secretaria, os deputados e o objeto de cada emenda.">
+    ${arvore.v > 0 ? html`<${ArvoreComLegenda} legenda="Secretaria → deputado → objeto da emenda · R$" arvore=${arvore} escala="maior" mostrarTotal=${false}
+      rotulo=${(nome, nivel) => nivel === 1 ? nomeProprio(nome) : nivel === 0 ? sentence(nome) : objeto(nome)} />` : html`<p class="hint">Carregando…</p>`}<//>`;
 }
 
 export function PerfilEmendasEstaduais({ anos, assembleia }) {
@@ -61,8 +67,8 @@ export function PerfilEmendasEstaduais({ anos, assembleia }) {
       <${SeletorDeAno} anos=${comEmendas} ano=${a.ano} setAno=${setAno} /><//>
     <${Bloco} id="eq" titulo="Quanto e para onde" colunas="dois-tercos" lede="O total indicado em cada ano e, no ano escolhido, as secretarias que mais receberam indicações.">
       <${PorSecretaria} a=${a} detalhe=${detalhe} />${comEmendas.length > 1 && html`<${PorAno} anos=${comEmendas} />`}<//>
-    <${Bloco} id="ea" titulo="Quem indicou e para quê" colunas="metade" lede="Cada deputado com o valor e o número de emendas, e a árvore que abre até o objeto de cada emenda.">
-      <${Autores} a=${a} deputados=${assembleia?.vereadores} /><${Arvore} detalhe=${detalhe} /><//>
+    <${Bloco} id="ea" titulo="Quem indicou e para quê" colunas="metade" lede="Cada deputado com o valor e o número de emendas e, de outro lado, cada secretaria com os deputados que a indicaram; as duas árvores abrem até o objeto de cada emenda.">
+      <${Autores} a=${a} detalhe=${detalhe} deputados=${assembleia?.vereadores} /><${PelaSecretaria} a=${a} detalhe=${detalhe} /><//>
     <p class="fonte">Fonte: listagem de emendas parlamentares do Governo da Paraíba. O valor é o indicado em cada emenda; a execução (empenho e pagamento) não é medida aqui. Os dados do ano corrente são parciais.</p>
   </article>`;
 }
