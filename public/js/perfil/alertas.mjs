@@ -2,6 +2,7 @@
 // e não avaliam a legalidade de nenhuma despesa.
 import { pct, dinheiro, sentence, nf } from '../formato.mjs';
 import { comprasQueDobraram, contratacoesEmAnoDeEleicao, mesAno } from './calculos-perfil.mjs';
+import { Aviso, ComoLer } from '../cartao.mjs';
 import { nomeProprio } from './pecas.mjs';
 const { html } = window.htmPreact;
 
@@ -48,11 +49,11 @@ export function Alertas({ a, anos }) {
   const lista = [...(a.alertas || []).map(comNomeAtual), ...contratacoesEmAnoDeEleicao(a).map(c => ['contratacoes', ...c]),
     ...comprasQueDobraram(anos, a.ano).map(c => ['crescimento', ...c])];
   return html`<div class="alertas">
-    <p class="ressalva" role="note"><b>Valores atípicos, calculados pelo site.</b> Comparamos os pagamentos registrados pelo Governo da Paraíba com a mediana do próprio estado. Valores assim costumam ter causas legítimas (contrato único, pagamento concentrado, forma de registro), e o site não avalia a legalidade de nenhuma despesa. Para conferir, consulte o dado de origem no <a href="https://dados.pb.gov.br/" target="_blank" rel="noopener">portal de dados abertos do Governo da Paraíba</a>.</p>
+    <${Aviso}><b>Valores atípicos, calculados pelo site.</b> Comparamos os pagamentos registrados pelo Governo da Paraíba com a mediana do próprio estado. Valores assim costumam ter causas legítimas (contrato único, pagamento concentrado, forma de registro), e o site não avalia a legalidade de nenhuma despesa. Para conferir, consulte o dado de origem no <a href="https://dados.pb.gov.br/" target="_blank" rel="noopener">portal de dados abertos do Governo da Paraíba</a>.<//>
     ${lista.length ? Object.keys(GRUPOS).map(tipo => { const doTipo = lista.filter(x => x[0] === tipo);
       return doTipo.length ? html`<${Grupo} tipo=${tipo} alertas=${doTipo} ano=${a.ano} />` : null; })
       : html`<p class="hint">Nenhum valor atípico pelos critérios do site neste ano.</p>`}
-    <details class="hint"><summary>Como calculamos</summary>
-      <p>Só entram compras, serviços, obras e locações (salários, previdência e repasses não). Meses acima da mediana: mais de 3 vezes a mediana mensal do mesmo tipo de compra e pelo menos R$ 5 milhões. Fornecedor com 70% ou mais: 70% ou mais de um tipo de compra de R$ 20 milhões ou mais; água, energia, telefone, correios e bancos ficam de fora. Compras que dobraram: um tipo de compra que dobrou e cresceu R$ 1 milhão em relação ao ano anterior completo. As despesas do estado não trazem a modalidade de licitação, então não há a conta de pagamentos sem licitação.</p></details>
+    <${ComoLer} titulo="Como calculamos">
+      <p>Só entram compras, serviços, obras e locações (salários, previdência e repasses não). Meses acima da mediana: mais de 3 vezes a mediana mensal do mesmo tipo de compra e pelo menos R$ 5 milhões. Fornecedor com 70% ou mais: 70% ou mais de um tipo de compra de R$ 20 milhões ou mais; água, energia, telefone, correios e bancos ficam de fora. Compras que dobraram: um tipo de compra que dobrou e cresceu R$ 1 milhão em relação ao ano anterior completo. As despesas do estado não trazem a modalidade de licitação, então não há a conta de pagamentos sem licitação.</p><//>
   </div>`;
 }

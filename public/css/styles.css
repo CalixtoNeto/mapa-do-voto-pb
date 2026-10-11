@@ -402,3 +402,8 @@ button.abre{cursor:pointer}
 .secao-box{display:flex; flex-direction:column; gap:10px; margin-top:14px; padding:14px; border:1.5px dashed var(--line); border-radius:12px; background:var(--surface)}
 .secao-box p{margin:0; font-size:14px; color:var(--muted)}
 .secao-box .row{margin-top:0}
+.hero .indicadores.denso dd, .hero .indicadores.denso div:first-child dd{font-size:clamp(20px,1.8vw,24px); overflow-wrap:normal}
+@media (max-width:560px){ .hero .indicadores.denso dd, .hero .indicadores.denso div:first-child dd{font-size:24px} }
+/* cinco cargos nos chips: quebram em mais de uma linha em vez de alargar a página */
+.filtros .chips{flex-wrap:wrap}
+.filtros .grupo-filtro{min-width:0}
