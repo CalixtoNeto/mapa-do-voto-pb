@@ -1,42 +1,27 @@
-// A Assembleia Legislativa em números (SAPL da ALPB): sessões, votações nominais, presença de cada deputado e a
-// lista dos deputados da legislatura, cada um com a sua página.
+// A Assembleia Legislativa em números: presença, partidos, votos nominais e alinhamento com a maioria dos deputados em exercício.
 import { nf, pct } from '../formato.mjs';
-import { ListaDeBarras } from '../componentes.mjs';
-import { Waffle } from '../graficos.mjs';
-import { gruposDeAssentos } from '../calculos-graficos.mjs';
-import { taxa, slug, vereadoresEmOrdem } from './calculos-perfil.mjs';
-import { Voltar, Topo, Estatisticas, Secao, ano } from './pecas.mjs';
+import { Aviso } from '../cartao.mjs';
+import { CabecalhoDoPerfil } from './cabecalho-perfil.mjs';
+import { presencaMedia } from './calculos-camara.mjs';
+import { ano } from './pecas.mjs';
+import { QuemAparece, OsDeputados } from './assembleia-presenca.mjs';
+import { ComoVotam, QuemVotaComAMaioria } from './assembleia-votos.mjs';
 const { html } = window.htmPreact;
 
-function Cadeiras({ deputados }) {
-  const contagem = new Map();
-  deputados.filter(v => v.emExercicio).forEach(v => contagem.set(v.partido || 'Sem partido', (contagem.get(v.partido || 'Sem partido') || 0) + 1));
-  const grupos = gruposDeAssentos([...contagem].map(([partido, eleitos]) => ({ partido, eleitos })), ['var(--s1)', 'var(--s2)', 'var(--s3)', 'var(--s4)'], 'var(--s0)');
-  const total = grupos.reduce((s, g) => s + g.n, 0);
-  return total ? html`<${Waffle} grupos=${grupos} descricao=${`${total} deputados em exercício: ${grupos.map(g => `${g.nome} ${g.n}`).join(', ')}`} />` : null;
-}
-
-export function ListaDeDeputados({ deputados }) {
-  return html`<ul class="lista-perfis">${vereadoresEmOrdem(deputados).map(v => html`<li><a href=${'#perfil/' + slug(v.nome)} class=${v.emExercicio ? '' : 'fora'}>
-    <span class="n">${v.nome}<small>${v.partido || 'sem partido'}${v.emExercicio ? '' : ' · fora do mandato'}</small></span>
-    <span class="m">${taxa(v.presenca) == null ? '' : `${pct(taxa(v.presenca), 0)} de presença`}<small>${nf.format(v.materias.total)} matérias</small></span></a></li>`)}</ul>`;
-}
-
-function Presencas({ deputados }) {
-  const itens = deputados.filter(v => v.presenca[1]).sort((a, b) => taxa(b.presenca) - taxa(a.presenca))
-    .map(v => ({ n: html`<a href=${'#perfil/' + slug(v.nome)}>${v.nome}</a>`, v: taxa(v.presenca), rotulo: `${pct(taxa(v.presenca), 0)} · ${v.presenca[0]}/${v.presenca[1]}` }));
-  return html`<${ListaDeBarras} itens=${itens} />`;
-}
+const indicadores = (a, ativos) => [
+  { rotulo: 'Deputados em exercício', valor: String(ativos), nota: `${a.legislatura.numero}ª legislatura` },
+  { rotulo: 'Sessões', valor: nf.format(a.sessoes), nota: 'com presença ou voto registrado' },
+  { rotulo: 'Votações nominais', valor: nf.format(a.votacoesNominais), nota: 'com voto de cada deputado' },
+  { rotulo: 'Presença média', valor: presencaMedia(a.vereadores) == null ? null : pct(presencaMedia(a.vereadores), 0), nota: 'das sessões em que podiam estar' }];
 
 export function PerfilAssembleia({ assembleia: a }) {
+  if (!a) return html`<article class="perfil"><${CabecalhoDoPerfil} pagina="assembleia" rotulo="Perfil do estado · Assembleia" titulo="Assembleia Legislativa" /><${Aviso}>Os dados da Assembleia ainda não foram gerados.<//></article>`;
+  const deputados = a.vereadores, ativos = deputados.filter(v => v.emExercicio).length;
   return html`<article class="perfil">
-    <${Voltar} />
-    <${Topo} titulo="Assembleia Legislativa da Paraíba" linhas=${[`${a.legislatura.numero}ª legislatura · ${ano(a.legislatura.inicio)}–${ano(a.legislatura.fim)}`]} />
-    <${Estatisticas} itens=${[{ rotulo: 'Sessões realizadas (com presença ou voto registrado)', valor: nf.format(a.sessoes) }, { rotulo: 'Votações nominais registradas', valor: nf.format(a.votacoesNominais) },
-      { rotulo: 'Deputados em exercício', valor: nf.format(a.vereadores.filter(v => v.emExercicio).length) }]} />
-    <${Secao} id="ad" titulo="Deputados estaduais"><${Cadeiras} deputados=${a.vereadores} /><${ListaDeDeputados} deputados=${a.vereadores} /><//>
-    <${Secao} id="ap" titulo="Presença nas sessões"><${Presencas} deputados=${a.vereadores} />
-      <p class="hint">Sessões em que o deputado tem presença registrada no SAPL ou votou (sim, não ou abstenção), desde o início do mandato de cada um. O registro de presença do SAPL tem falhas; licenças e missões oficiais podem aparecer como ausência.</p><//>
-    <p class="hint">Fonte: SAPL da Assembleia Legislativa da Paraíba (sessões, presença, votos nominais e matérias). Votações simbólicas só registram o resultado, não o voto de cada deputado.</p>
+    <${CabecalhoDoPerfil} pagina="assembleia" rotulo=${`Perfil do estado · Legislatura ${a.legislatura.numero} · ${ano(a.legislatura.inicio)}–${ano(a.legislatura.fim)}`} titulo="Assembleia Legislativa da Paraíba"
+      lede=${`Presença nas sessões e votos nominais dos ${ativos} deputados estaduais em exercício. Dados do SAPL da Assembleia.`} indicadores=${indicadores(a, ativos)} />
+    <${QuemAparece} deputados=${deputados} /><${OsDeputados} deputados=${deputados} />
+    <${ComoVotam} deputados=${deputados} votacoes=${a.votacoesNominais} /><${QuemVotaComAMaioria} deputados=${deputados} />
+    <p class="fonte">Fonte: SAPL da Assembleia Legislativa da Paraíba (sessões, presença e votos nominais da legislatura ${a.legislatura.numero}). Votações simbólicas só registram o resultado, não o voto de cada deputado. O registro de presença do SAPL tem falhas; licenças e missões oficiais podem aparecer como ausência. Os pontos da dispersão têm o nome do deputado ao passar o cursor.</p>
   </article>`;
 }
