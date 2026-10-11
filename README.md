@@ -26,7 +26,7 @@ Além do mapa de votos, cada candidato e cada cargo têm análises tiradas dos D
 
 **Na ficha do candidato** (botão *Candidato*):
 
-![Análises da ficha de Hugo Motta (deputado federal, 2022): força do voto, dinheiro da campanha em árvore até cada fornecedor, quem doou, bens declarados e votação com distribuição parecida](docs/candidato.gif)
+![Análises da ficha de Hugo Motta (deputado federal, 2022): força do voto, valores distantes da mediana do cargo, dinheiro da campanha em árvore até cada fornecedor, quem doou, bens declarados e dobradinhas com os outros cargos](docs/candidato.gif)
 
 - **Valores distantes da mediana do cargo**: o que destoa na campanha em relação aos outros candidatos ao mesmo cargo na mesma eleição: uma categoria de gasto (combustível, impressos, veículos…) ou o custo por voto 3 vezes ou mais a mediana dos outros, recursos próprios acima dos bens declarados, um só doador ou fornecedor com metade ou mais do dinheiro, quem doou e também recebeu da campanha e despesas que ficaram sem pagar. É uma comparação estatística, sem juízo sobre as contas, e o painel diz isso antes da lista (com as causas legítimas mais comuns).
 - **Dinheiro da campanha**: quanto recebeu, quanto declarou ter gasto, **custo por voto**, quanto veio do **fundo eleitoral** e a origem do dinheiro (fundo eleitoral, fundo partidário e partido, doações, recursos próprios e de outros candidatos); a **posição entre os candidatos do cargo** no recebido, no gasto e no fundo eleitoral, com a mediana do cargo; **para onde foi o dinheiro** (todas as categorias de despesa, numa árvore que abre cada categoria até todos os fornecedores); **quem doou** (os dez maiores doadores, com a parcela de cada um no recebido); quanto **ficou sem pagar**, quanto veio do **maior doador** e de **recursos próprios**; **doadores e fornecedores em comum** com outras campanhas; **quando o dinheiro chegou** (por semana); e o dinheiro da mesma pessoa **em cada eleição** (recebido, gasto, votos e custo por voto).
@@ -38,7 +38,7 @@ Além do mapa de votos, cada candidato e cada cargo têm análises tiradas dos D
 
 **No panorama do cargo** (botão *Panorama do cargo*):
 
-![Panorama de deputado federal em 2022: mais votado, abstenção, a tabela do mapa, gasto × votos, partidos em hierarquia (partido → candidatos) e análises por município](docs/panorama.gif)
+![Panorama de deputado federal em 2022: mais votado, abstenção, gasto × votos, fundo eleitoral por partido, quem disputou e quem se elegeu, o dinheiro elege?, partidos em hierarquia, concentração do fundo e análises por município](docs/panorama.gif)
 
 - Mapa do **mais votado** em cada município e de **abstenção, brancos e nulos**, com os totais do estado.
 - **Gasto × votos** de todos os candidatos, com diagonais de custo por voto, e rankings de menor e maior custo por voto, mais fundo eleitoral, mais dinheiro recebido e maior gasto.
