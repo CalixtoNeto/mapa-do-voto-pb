@@ -23,15 +23,6 @@ button,input,select{font:inherit; color:inherit}
 :focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 a{color:inherit; text-underline-offset:3px}
 
-.app{max-width:1280px; margin:0 auto; padding:14px 16px 40px; display:flex; flex-direction:column; gap:18px}
-.app.nodata .stage{order:2}
-.app.nodata .side{order:3}
-.top{display:flex; align-items:baseline; justify-content:space-between; gap:12px; order:1}
-.brand{margin:0; font:600 17px/1.2 var(--serif); letter-spacing:.005em}
-.brand span{font-family:var(--sans); font-weight:400; font-size:14px; color:var(--muted); margin-left:6px}
-.filters{order:2; display:flex; flex-direction:column; gap:12px}
-.stage{order:3; display:flex; flex-direction:column; gap:12px; scroll-margin-top:12px}
-.side{order:4; display:flex; flex-direction:column; gap:26px}
 
 .field{display:flex; flex-direction:column; gap:4px; font-size:13px; color:var(--muted)}
 select{appearance:none; background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2378858f' stroke-width='1.5'/%3E%3C/svg%3E") no-repeat right 12px center; border:1px solid var(--line); border-radius:10px; padding:10px 32px 10px 12px; min-height:44px}
@@ -132,31 +123,25 @@ h2{margin:0; font:600 21px/1.25 var(--serif)}
 .credits{margin:0; font-size:12.5px; color:var(--muted); max-width:60ch}
 
 @media (min-width:600px){
-  .app{padding:20px 24px 48px}
   .chips{margin:0; padding:0; flex-wrap:wrap}
-  .stats{grid-template-columns:repeat(4,minmax(0,1fr))}
 }
 @media (min-width:960px){
-  .app{display:grid; grid-template-columns:minmax(0,1.55fr) minmax(340px,1fr); grid-template-areas:"top top" "stage filters" "stage side"; grid-template-rows:auto auto 1fr; gap:22px 40px; align-items:start}
-  .top{grid-area:top} .filters{grid-area:filters} .side{grid-area:side} .stage{grid-area:stage; position:sticky; top:calc(env(safe-area-inset-top,0px) + 16px)}
-  .app.nodata{grid-template-areas:"top top" "stage side"}
-  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ranking ol{max-height:46vh}
 }
 @media (prefers-reduced-motion: reduce){ *{scroll-behavior:auto!important} }
 
-/* Município: votos por local de votação */
-.locais-h{margin:16px 0 0; font:600 15px var(--serif)}
-.locais{list-style:none; margin:8px 0 0; padding:0; border-top:1px solid var(--line); max-height:340px; overflow:auto}
+/* Bairro: votos por local de votação */
+.locais{list-style:none; margin:12px 0 0; padding:0; border-top:1px solid var(--line)}
 .locais li{display:grid; grid-template-columns:1fr auto; grid-template-rows:auto 3px; gap:2px 12px; padding:8px 0 7px; border-bottom:1px solid var(--line); align-items:baseline}
 .locais .ln{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px}
 .locais .lv{font:600 15px var(--serif); text-align:right}
 .locais .bar{grid-column:1 / 3; height:3px}
 .locais .bar i{display:block; height:100%; background:var(--r3); border-radius:2px}
 .muni .hint{margin-top:10px; font-size:13px}
-.secao-box{display:flex; flex-direction:column; gap:10px; margin-top:14px; padding:14px; border:1.5px dashed var(--line); border-radius:12px; background:var(--surface)}
-.secao-box p{margin:0; font-size:14px; color:var(--muted)}
-.secao-box .row{margin-top:0}
+.legend .hint{font-size:13px}
+.ranking li button{grid-template-columns:30px 1fr auto 64px}
+/* Aviso: eleição sem votos por bairro */
+.aviso{margin:0; padding:10px 12px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--surface); font-size:14px; color:var(--ink)}
 /* Comparação entre eleições */
 :root{ --d0:#B3132B; --d1:#E8949E; --d2:#CBD2D7; --d3:#86B3DC; --d4:#1F5E9E; --up:#1F7A4D }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --d0:#FF5D73; --d1:#B3566B; --d2:#3A4856; --d3:#4B8DCA; --d4:#9CCBF2; --up:#5BD18B } }
@@ -187,9 +172,6 @@ h2{margin:0; font:600 21px/1.25 var(--serif)}
 .ranking.cmp .dd{grid-area:dd; font:600 15px var(--serif); text-align:right}
 .ranking.cmp .pv{grid-area:pv; font-size:13px; text-align:right; color:var(--muted)}
 .ranking.cmp .pv.up,.ranking.cmp .dd.up{color:var(--up)} .ranking.cmp .pv.down,.ranking.cmp .dd.down{color:var(--accent)}
-/* Aviso */
-.aviso{margin:0; padding:10px 12px; border:1px solid var(--line); border-left:3px solid var(--accent); border-radius:8px; background:var(--surface); font-size:14px; color:var(--ink)}
-
 /* Análises: cores categóricas (validadas para daltonismo; ver README) e painéis */
 :root{ --s0:#B9C2C9; --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --s0:#46525E; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500 } }
@@ -266,53 +248,8 @@ figcaption .leg li{display:flex; gap:6px; align-items:center}
 .grafico .diag text{paint-order:stroke; stroke:var(--surface); stroke-width:3px; stroke-linejoin:round}
 .analise > .link{align-self:flex-start}
 
-/* ---------- fora da curva ---------- */
-.ressalva{margin:0; padding:10px 12px; border-left:3px solid var(--accent); background:var(--surface); font-size:14px}
-.lista-alertas{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
-.lista-alertas li{padding:10px 0; border-bottom:1px solid var(--line)}
-.lista-alertas p{margin:0; font-size:14px}
-
-/* ---------- árvore de decomposição (para onde foi o dinheiro) ---------- */
-.trilha{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 6px; font-size:14px}
-.trilha .link{padding:4px 0; text-align:left}
-.trilha [aria-current="true"]{color:var(--ink); text-decoration:none; font-weight:600}
-.trilha span{color:var(--muted)}
-.ramos li{padding:0; display:block}
-.ramos .abre{display:grid; width:100%; grid-template-columns:1fr auto; grid-template-rows:auto 3px; gap:2px 12px; padding:8px 0 7px; border:0; background:none; text-align:left; align-items:baseline; font:inherit; color:inherit}
-button.abre{cursor:pointer}
-.ramos button.abre .ln::after{content:" ›"; color:var(--muted)}
-.ramos button.abre:hover .ln{text-decoration:underline; text-underline-offset:3px}
-.ramos .lv small{font:400 12px var(--sans); color:var(--muted)}
-.ramos .bar{grid-column:1 / 3; height:3px}
-
-/* ---------- aviso legal, pular para o conteúdo e tabela do mapa ---------- */
-.aviso-legal{order:5; grid-column:1 / -1; border-top:1px solid var(--line); padding-top:14px; font-size:13px; color:var(--muted); display:flex; flex-direction:column; gap:6px}
-.aviso-legal p{margin:0; max-width:80ch}
-.pular{position:absolute; left:-9999px}
-.pular:focus{left:16px; top:8px; z-index:3; background:var(--surface); color:var(--ink); padding:8px 12px; border-radius:8px}
-.tabela-mapa summary{cursor:pointer; padding:8px 0; font-size:14px}
-.tabela-mapa .rolagem{overflow:auto; max-height:420px}
-.tabela-mapa table{border-collapse:collapse; width:100%; font-size:14px}
-.tabela-mapa th,.tabela-mapa td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap}
-.tabela-mapa th[scope="row"],.tabela-mapa thead th:first-child{text-align:left; font-weight:500}
-.tabela-mapa caption{text-align:left; font-weight:600; padding:6px 0}
-.partidos li:has(> .abre){display:block; padding:0}
-.partidos .abre{display:grid; width:100%; grid-template-columns:1fr auto; gap:3px 10px; padding:8px 0; border:0; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer}
-.partidos .abre:hover .nm{text-decoration:underline; text-underline-offset:3px}
-.partidos .vv small{font:400 12px var(--sans); color:var(--muted)}
-/* O mapa é sticky no desktop e, perto do fim da página, passaria por cima do rodapé: o rodapé fica numa linha
-   própria da grade, acima do mapa e com fundo opaco. */
-.aviso-legal{position:relative; z-index:3; background:var(--paper); padding-bottom:8px}
-@media (min-width:960px){
-  .app{grid-template-areas:"top top" "stage filters" "stage side" "foot foot"}
-  .app.nodata{grid-template-areas:"top top" "stage side" "foot foot"}
-  .aviso-legal{grid-area:foot}
-  .stage{z-index:1}
-}
-
-/* ---------- perfil do estado (a mesma base do perfil do município de Bayeux) ---------- */
-.com-perfis .filters{order:2}
-.perfis{order:3; display:flex; flex-direction:column; max-width:760px; width:100%}
+/* ---------- perfis (só em Bayeux) ---------- */
+.perfis{display:flex; flex-direction:column; width:100%}
 .perfil{display:flex; flex-direction:column; gap:26px}
 .perfil-topo{display:flex; gap:16px; align-items:flex-start}
 .perfil-topo img{flex:none; width:88px; height:88px; object-fit:cover; border-radius:50%; background:var(--zero)}
@@ -334,34 +271,57 @@ button.abre{cursor:pointer}
 .materias p{margin:0; flex-basis:100%; font-size:14px; overflow-wrap:anywhere}
 .ligacoes .lv small{font:400 12px var(--sans); color:var(--muted)}
 .locais .ln a{color:inherit}
-@media (min-width:960px){
-  .app.com-perfis{display:flex}
-  .perfis{margin:0 auto}
-}
 .ligacoes .ln{white-space:normal; overflow:visible}
 .ligacoes .ln small{display:block; font-size:12.5px; color:var(--muted)}
+.ligacoes .lv small{display:block; text-align:right}
+.trilha{display:flex; flex-wrap:wrap; align-items:baseline; gap:2px 6px; font-size:14px}
+.trilha .link{padding:4px 0; text-align:left}
+.trilha [aria-current="true"]{color:var(--ink); text-decoration:none; font-weight:600}
+.trilha span{color:var(--muted)}
+.ramos li{padding:0; display:block}
+.ramos .abre{display:grid; width:100%; grid-template-columns:1fr auto; grid-template-rows:auto 3px; gap:2px 12px; padding:8px 0 7px; border:0; background:none; text-align:left; align-items:baseline; font:inherit; color:inherit}
+button.abre{cursor:pointer}
+.ramos button.abre .ln::after{content:" ›"; color:var(--muted)}
+.ramos button.abre:hover .ln{text-decoration:underline; text-underline-offset:3px}
+.ramos .lv small{font:400 12px var(--sans); color:var(--muted)}
+.ramos .bar{grid-column:1 / 3; height:3px}
+.ressalva{margin:0; padding:10px 12px; border-left:3px solid var(--accent); background:var(--surface); font-size:14px}
+.lista-alertas{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
+.lista-alertas li{padding:10px 0; border-bottom:1px solid var(--line)}
+.lista-alertas .tipo{font:600 12px var(--sans); text-transform:uppercase; letter-spacing:.04em; color:var(--accent)}
+.lista-alertas p{margin:4px 0 0; font-size:14px}
+.alertas{display:flex; flex-direction:column; gap:12px}
+.alertas details p{margin:6px 0 0}
 .grupo-alertas{display:flex; flex-direction:column; gap:4px}
 .grupo-alertas .locais{margin-top:6px}
 .grupo-alertas .ln{white-space:normal}
 .grupo-alertas .ln small{display:block; color:var(--muted); font-size:12.5px}
+
+/* ---------- aviso legal, pular para o conteúdo e tabela do mapa ---------- */
+.pular{position:absolute; left:-9999px}
+.pular:focus{left:16px; top:8px; z-index:3; background:var(--surface); color:var(--ink); padding:8px 12px; border-radius:8px}
+.tabela-mapa summary{cursor:pointer; padding:8px 0; font-size:14px}
+.tabela-mapa .rolagem{overflow:auto; max-height:420px}
+.tabela-mapa table{border-collapse:collapse; width:100%; font-size:14px}
+.tabela-mapa th,.tabela-mapa td{padding:6px 8px; border-bottom:1px solid var(--line); text-align:right; white-space:nowrap}
+.tabela-mapa th[scope="row"],.tabela-mapa thead th:first-child{text-align:left; font-weight:500}
+.tabela-mapa caption{text-align:left; font-weight:600; padding:6px 0}
 .seg.modo .grupo-modo{align-self:center; margin-left:8px; font-size:12px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted)}
 .seg.modo .grupo-modo.primeiro{margin-left:0; margin-right:2px}
-
+.partidos li:has(> .abre){display:block; padding:0}
+.partidos .abre{display:grid; width:100%; grid-template-columns:1fr auto; gap:3px 10px; padding:8px 0; border:0; background:none; text-align:left; font:inherit; color:inherit; cursor:pointer}
+.partidos .abre:hover .nm{text-decoration:underline; text-underline-offset:3px}
+.partidos .vv small{font:400 12px var(--sans); color:var(--muted)}
 /* ---------- revisão visual: grupos rotulados, cards, contraste e barras ---------- */
-:root{ --muted:#4A5661; --card:#FFFFFF; --sombra:0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04); --trilho:#E6EAED }
-@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --muted:#A3B1BD; --card:#18232F; --sombra:none; --trilho:#223040 } }
-:root[data-theme="dark"]{ --muted:#A3B1BD; --card:#18232F; --sombra:none; --trilho:#223040 }
+:root{ --muted:#4A5661; --card:#FFFFFF; --sombra:0 1px 3px rgba(15,23,42,.06), 0 1px 2px rgba(15,23,42,.04) }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){ --muted:#A3B1BD; --card:#18232F; --sombra:none } }
+:root[data-theme="dark"]{ --muted:#A3B1BD; --card:#18232F; --sombra:none }
 .field{font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase}
 .field select{text-transform:none; letter-spacing:normal; font-weight:400; font-size:15px; color:var(--ink)}
 .picker label{font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase}
 .seg.modo{flex-wrap:wrap}
 .seg.modo .grupo-modo.primeiro,.rotulo-filtro{flex-basis:100%; margin:0; font-size:11.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--muted)}
 .grupo-filtro{display:flex; flex-direction:column; gap:6px}
-/* cards: estatísticas e blocos de análise em fundo branco, para os números se destacarem do fundo cinza */
-.stats{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; box-shadow:var(--sombra)}
-.stats div{border-top:0; padding-top:0}
-.side > .analise,.side > .traj,.side > .ranking,.perfil > .analise{background:var(--card); border:1px solid var(--line); border-radius:10px; padding:16px; box-shadow:var(--sombra)}
-.analise .stats{box-shadow:none; background:transparent; border:0; padding:0}
 /* trilho nas barras de proporção, para comparar as linhas de relance */
 .ranking .bar,.locais .bar,.traj .bar,.partidos .bar{background:var(--trilho); border-radius:2px}
 .ranking li button:hover,.lista-cands li button:hover,.locais .abre:hover{background:color-mix(in srgb, var(--ink) 4%, transparent)}
@@ -394,12 +354,6 @@ button.abre{cursor:pointer}
 .sanfona .filhos .bar{height:3px}
 @media (prefers-reduced-motion: reduce){ .sanfona .seta{transition:none} }
 
-/* ---------- modo perfil: cabeçalho, seletor e rodapé na mesma coluna centralizada do conteúdo ---------- */
-@media (min-width:960px){
-  .app.com-perfis{flex-direction:column; align-items:center}
-  .app.com-perfis > .top,.app.com-perfis > .filters,.app.com-perfis > .perfis,.app.com-perfis > .aviso-legal{width:100%; max-width:760px; margin-left:auto; margin-right:auto}
-}
-
 /* Gráficos de CSS puro (public/js/graficos.mjs) */
 .rosca{margin:0; display:flex; align-items:center; gap:18px; flex-wrap:wrap}
 .rosca-aro{flex:none; width:132px; height:132px; border-radius:50%; display:grid; place-items:center}
@@ -422,8 +376,29 @@ button.abre{cursor:pointer}
 .colunas .cv{font-size:11px; color:var(--muted); white-space:nowrap} .colunas .ultima .cv{color:var(--ink); font-weight:600}
 .colunas .cn{font-size:12px; color:var(--muted); border-top:1px solid var(--line); width:100%; text-align:center; padding-top:3px}
 .ranking.cmp .haltere{grid-area:hl}
+
+/* Emendas: execução e convênios (public/js/perfil/execucao.mjs) */
+.execucao,.convenios{list-style:none; margin:0; padding:0; border-top:1px solid var(--line)}
+.execucao li{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.3fr); gap:6px 18px; align-items:end; padding:12px 2px; border-bottom:1px solid var(--line)}
+.ex-quem b{display:block; font-size:15px; font-weight:600} .ex-quem small{font-size:12.5px; color:var(--muted)}
+.ex-valores{display:flex; justify-content:space-between; gap:10px; font-size:13.5px; color:var(--muted)} .ex-valores b{color:var(--ink); font-weight:600}
+.ex-barra{grid-column:2; height:6px; border-radius:3px; background:var(--zero,var(--line)); overflow:hidden}
+.ex-barra i{display:block; height:100%; border-radius:3px}
+.ex-barra.completa i{background:var(--s3)} .ex-barra.parcial i{background:var(--r3)} .ex-barra.baixa i{background:var(--s2)}
+.convenios li{display:grid; grid-template-columns:96px minmax(0,1fr); gap:4px 16px; padding:12px 2px; border-bottom:1px solid var(--line)}
+.cv-valor b{display:block; font:600 17px/1.1 var(--serif)} .cv-valor small{font-size:11.5px; letter-spacing:.06em; color:var(--muted)}
+.cv-corpo p{margin:6px 0 2px; font-size:14px; overflow-wrap:anywhere} .cv-corpo small{font-size:12.5px; color:var(--muted)}
+@media (max-width:520px){.execucao li{grid-template-columns:1fr} .ex-barra{grid-column:1}}
+.cv-corpo .tag{display:inline-block; font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:2px 9px}
 .pilha-fig{margin:0; display:flex; flex-direction:column; gap:8px}
 .pilha-fig .pilha{height:14px}
 .colunas.densa{gap:3px} .colunas.densa .cv{display:none} .colunas.densa .ultima .cv{display:block}
 .colunas .cn{min-height:1.2em}
 .posicoes li .haltere{grid-column:1 / 3}
+
+/* ---------- Paraíba: município e seção ---------- */
+.locais-h{margin:16px 0 0; font:600 15px var(--serif)}
+.locais{max-height:340px; overflow:auto}
+.secao-box{display:flex; flex-direction:column; gap:10px; margin-top:14px; padding:14px; border:1.5px dashed var(--line); border-radius:12px; background:var(--surface)}
+.secao-box p{margin:0; font-size:14px; color:var(--muted)}
+.secao-box .row{margin-top:0}
