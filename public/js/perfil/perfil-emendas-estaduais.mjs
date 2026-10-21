@@ -4,6 +4,9 @@ import { nf, dinheiro, sentence, pct } from '../formato.mjs';
 import { Bloco } from '../estrutura.mjs';
 import { Cartao, Aviso } from '../cartao.mjs';
 import { Treemap } from '../treemap.mjs';
+import { Sankey } from '../sankey.mjs';
+import { Alternar } from '../alternar.mjs';
+import { grafoDasEmendasEstaduais } from './calculos-fluxo-perfil.mjs';
 import { Colunas } from '../graficos.mjs';
 import { ArvoreComLegenda } from './arvore-legenda.mjs';
 import { arvoreDosAutores, arvoreDasSecretarias, encurtar } from './arvores-estado.mjs';
@@ -28,10 +31,13 @@ function PorAno({ anos }) {
 }
 
 function PorSecretaria({ a, detalhe }) {
-  const itens = agruparPequenos(emendasPorSecretaria(detalhe?.arvores?.emendasEstaduais).map(s => ({ n: sentence(s.n), v: s.v })), 0.02);
-  return html`<${Cartao} tipo="Treemap · secretarias" titulo=${`Para quais secretarias, ${a.ano}`} sub=${`${dinheiro(a.emendas.total)}. A área é proporcional ao valor indicado.`}
-    nota="Cor mais escura = valor maior. A emenda indica o valor e a secretaria que vai executar.">
-    ${itens.length > 0 ? html`<${Treemap} itens=${itens} formato=${dinheiro} altura=${340} descricao=${`Emendas indicadas por secretaria em ${a.ano}`} />` : html`<p class="hint">Carregando…</p>`}<//>`;
+  const arvore = detalhe?.arvores?.emendasEstaduais, grafo = grafoDasEmendasEstaduais(arvore);
+  const itens = agruparPequenos(emendasPorSecretaria(arvore).map(s => ({ n: sentence(s.n), v: s.v })), 0.02);
+  const treemap = html`<${Treemap} itens=${itens} formato=${dinheiro} altura=${340} descricao=${`Emendas indicadas por secretaria em ${a.ano}`} />`;
+  return html`<${Cartao} tipo="Treemap · fluxo" titulo=${`Para quais secretarias, ${a.ano}`} sub=${`${dinheiro(a.emendas.total)}. Em blocos, a área é proporcional ao valor indicado; em fluxo, a faixa liga o deputado à secretaria.`}
+    nota="Cor mais escura = valor maior. A emenda indica o valor e a secretaria que vai executar. No fluxo aparecem os oito maiores de cada lado.">
+    ${itens.length === 0 ? html`<p class="hint">Carregando…</p>` : grafo ? html`<${Alternar} rotulo="Forma de ver as emendas por secretaria" visoes=${[{ id: 'blocos', rotulo: 'Blocos', corpo: treemap },
+      { id: 'fluxo', rotulo: 'Fluxo', corpo: html`<${Sankey} grafo=${grafo} formato=${dinheiro} altura=${380} descricao=${`Emendas por deputado e secretaria em ${a.ano}`} />` }]} />` : treemap}<//>`;
 }
 
 const objeto = nome => html`<span title=${sentence(nome)}>${encurtar(sentence(nome), 130)}</span>`;
