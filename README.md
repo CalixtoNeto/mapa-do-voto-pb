@@ -84,7 +84,7 @@ Para gerar ou atualizar: **Actions → Gerar análises → Run workflow** (em br
 
 ## Perfil do estado
 
-![Perfil do estado: Governo (treemap e árvore de gastos, série anual, folha, valores atípicos), Assembleia (presença, votos, alinhamento), Emendas estaduais e a página de um deputado](docs/perfil.gif)
+![Perfil do estado: Governo (treemap ou fluxo e árvore de gastos, série anual, folha, valores atípicos), Assembleia (presença, votos, alinhamento), Emendas estaduais e a página de um deputado](docs/perfil.gif)
 
 Em **Perfil do estado** (ou direto em `#perfis`), o Governo da Paraíba em cada ano desde 2023, pela [API de dados abertos do Governo da Paraíba](https://api.dados.pb.gov.br/swagger/), tudo em árvore (o total que se abre até quem recebeu):
 
