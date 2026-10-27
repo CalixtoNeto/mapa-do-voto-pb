@@ -58,6 +58,14 @@ test('agregar: município em que nenhuma seção foi lida só conta os erros', (
   assert.deepEqual([municipios[0][3], municipios[0][4], municipios[0][5]], [0, 1, 0]);
 });
 
+test('agregar: seção sem o grupo de identificação (urnas do exterior) conta o comparecimento e fica fora da biometria', () => {
+  const sem = secao({ secao: '0009', porIdentificacao: undefined, abertura: '2026-10-25T09:30:00' });
+  const { municipios, atipicas } = agregarSecoes([sem], { uf: 'ZZ', numeros: NUMEROS });
+  assert.deepEqual(municipios[0].slice(5, 12), [300, 250, 0, 0, 0, 2, 8]);
+  assert.equal(atipicas[0][6], 0);
+  assert.equal(classificar(sem).semDigital, false);
+});
+
 test('pleito do turno: pelos pleitos do ano ordenados por data', () => {
   const config = { pl: [{ cd: '3221', c: 'ele2026', dt: '25/10/2026' }, { cd: '3220', c: 'ele2026', dt: '04/10/2026' }, { cd: '3000', c: 'ele2024', dt: '06/10/2024' }] };
   assert.equal(pleitoDoTurno(config, '2026', '1'), '3220');
