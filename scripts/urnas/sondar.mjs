@@ -70,3 +70,21 @@ export async function sondar(ano) {
     }
   }
 }
+
+// Validação: coleta todas as seções de um município e soma os campos do boletim para comparar com os totais conhecidos.
+export async function validarMunicipio(ano, uf, municipio) {
+  const { secoesDaUf, coletarSecoes } = await import('./coletar.mjs');
+  const config = await pegar(`${API}/comum/config/ele-c.json`), pleito = (config.pl || []).filter(p => p.c === `ele${ano}`).map(p => p.cd).sort().pop();
+  const secoes = (await secoesDaUf({ ano, pleito, uf })).filter(s => s.municipio === municipio);
+  console.log(`validação ${uf} ${municipio} pleito ${pleito}: ${secoes.length} seções`);
+  const t0 = Date.now(), lidas = await coletarSecoes({ ano, pleito, uf }, secoes, { simultaneos: 5, aoProgresso: (f, n) => console.log(`  ${f}/${n} em ${Math.round((Date.now() - t0) / 1000)}s`) });
+  const boas = lidas.filter(l => !l.erro), erros = lidas.filter(l => l.erro);
+  console.log('lidas:', boas.length, 'erros:', erros.length, JSON.stringify(erros.slice(0, 3)));
+  const soma = f => boas.reduce((t, l) => t + (f(l) || 0), 0);
+  console.log('Σ comparecimentoX', soma(l => l.comparecimentoX), '| Σ trio', [0, 1, 2].map(k => soma(l => l.trio?.[k])), '| Σ eleicao[1..3]', [1, 2, 3].map(k => soma(l => l.eleicao?.[k])));
+  const porTipo = {}; for (const l of boas) for (const v of l.votos) { const k = `${v.tipo}:${v.numero}`; porTipo[k] = (porTipo[k] || 0) + v.qtd; }
+  console.log('Σ votos por tipo:numero', JSON.stringify(porTipo));
+  const hist = campo => { const h = {}; for (const l of boas) { const k = (l[campo] || '').slice(11, 16); h[k] = (h[k] || 0) + 1; } return Object.entries(h).sort((a, b) => b[1] - a[1]).slice(0, 8); };
+  console.log('abertura (hh:mm mais comuns)', JSON.stringify(hist('abertura')), '| encerramento', JSON.stringify(hist('encerramento')));
+  console.log('exemplo:', JSON.stringify(boas[0]), '| trio zerado no meio:', boas.filter(l => l.trio?.[1] === 0).length);
+}
