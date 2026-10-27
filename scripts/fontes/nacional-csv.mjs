@@ -22,6 +22,7 @@ export function leitorDeVotosNacionais({ ano, acc }) {
   let colunaDeVotos;
   return porRegistro({
     aoCabecalho: colunas => {
+      console.log(`  colunas QT_/DS_SIT da votação ${ano}: ${Object.keys(colunas).filter(c => /^(QT_|DS_SIT)/.test(c)).join(',')}`);
       colunaDeVotos = 'QT_VOTOS_NOMINAIS_VALIDOS' in colunas ? 'QT_VOTOS_NOMINAIS_VALIDOS' : 'QT_VOTOS_NOMINAIS';
       exigir(colunas, [...COLUNAS_DE_VOTOS, colunaDeVotos], ano);
     },
@@ -37,7 +38,10 @@ export function leitorDeVotosNacionais({ ano, acc }) {
 
 export function leitorDeComparecimentoNacional({ ano, acc }) {
   return porRegistro({
-    aoCabecalho: colunas => { exigir(colunas, COLUNAS_DE_LUGAR, ano); exigirColunasDoComparecimento(colunas, ano); },
+    aoCabecalho: colunas => {
+      console.log(`  colunas QT_ do comparecimento ${ano}: ${Object.keys(colunas).filter(c => /^QT_/.test(c)).join(',')}`);
+      exigir(colunas, COLUNAS_DE_LUGAR, ano); exigirColunasDoComparecimento(colunas, ano);
+    },
     aoRegistro: (campos, colunas) => {
       if (!ehPresidenteDoAno(campos, colunas, ano)) return;
       somarComparecimentoNacional(acc, lugarDoRegistro(campos, colunas), numerosDoComparecimento(campos, colunas).slice(0, 4));
