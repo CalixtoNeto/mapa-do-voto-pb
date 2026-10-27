@@ -42,6 +42,17 @@ Site estático (`public/`) com dados gerados por `scripts/gerar-dados.mjs` a par
   A folha só vai agregada (tipo de cargo e órgão), sem nomes.
 - Alerta é conta do site: títulos descritivos ("valores atípicos"), nunca "irregular" ou citação de lei junto do dado.
 
+## Cenário nacional (só neste repositório)
+
+- `scripts/gerar-nacional.mjs` gera `public/data/nacional/ANO.json` (presidente por município: CSV `_BRASIL.csv` do TSE e, para o turno que falta, a API);
+  `public/js/nacional/` lê o arquivo. O mapa usa `public/data/br.topo.json` (malha de UFs do IBGE, `scripts/gerar-malha-brasil.mjs`) e a escala viridis: nunca cor de partido.
+- Os nulos são `QT_TOTAL_VOTOS_NULOS` (com os nulos técnicos), que é o que fecha com o comparecimento. Todo texto de auditoria diz que é comparação estatística, não avaliação de legalidade.
+- Boletins de urna: `scripts/gerar-urnas.mjs` (um turno e uma UF; o workflow **Coletar boletins de urna** roda um job por UF e junta em `ANO-tTURNO-urnas.json`).
+  Cada seção são 2 requisições (`aux.json` com o hash e o `-bu.dat`); mantenha poucas simultâneas. `scripts/urnas/boletim.mjs` lê o boletim (ASN.1 BER); os campos foram conferidos em João Pessoa
+  (a soma das seções bate com os totais oficiais). O grupo do meio de `porIdentificacao` é tratado como biometria (o maior dos três); horários são a hora local da urna.
+  Linha de município: `[cd, uf, nome, lidas, semBoletim, aptos, comparecimento, g0, g1(biometria), g2, brancos, nulos, semDigital, abriuTarde, fechouTarde, prorrogadas, [seções, comparecimento, A, B] normais, [..] prorrogadas]`;
+  atípica: `[uf, cd, zona, seção, marca (1 sem digital, 2 abriu mais de 1 h tarde), comparecimento, % biometria, abertura, encerramento, A, B]`.
+
 ## Como o código está organizado
 
 - Uma responsabilidade por arquivo, arquivos com menos de 100 linhas e funções com menos de 20.

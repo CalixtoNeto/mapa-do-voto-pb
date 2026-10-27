@@ -7,7 +7,8 @@ async function indexar(pasta) {
     const { ano, turnos, atualizadoEm, fonte } = JSON.parse(await readFile(`${pasta}/${arquivo}`, 'utf8'));
     anos.push({ ano, turnos: Object.keys(turnos), atualizadoEm, fonte });
   }
-  await writeFile(`${pasta}/index.json`, JSON.stringify({ anos }));
+  const urnas = (await readdir(pasta)).map(n => /^(\d{4})-t(\d)-urnas\.json$/.exec(n)).filter(Boolean).map(([, ano, turno]) => ({ ano, turno })).sort((a, b) => b.ano.localeCompare(a.ano) || a.turno.localeCompare(b.turno));
+  await writeFile(`${pasta}/index.json`, JSON.stringify({ anos, urnas }));
 }
 
 export async function escreverNacional(pasta, nacional) {

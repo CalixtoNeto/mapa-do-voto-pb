@@ -46,7 +46,7 @@ jobs:
 
       - name: Gerar o cenário nacional
         run: |
-          [[ "$ANO" =~ ^[0-9]{4}( [0-9]{4})*( sondar-urnas| validar-urnas)?$ ]] || { echo "Anos inválidos: $ANO"; exit 1; }
+          [[ "$ANO" =~ ^[0-9]{4}( [0-9]{4})*$ ]] || { echo "Anos inválidos: $ANO"; exit 1; }
           node scripts/gerar-nacional.mjs $ANO --forcar
 
       - name: Commitar e publicar
