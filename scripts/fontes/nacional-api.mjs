@@ -33,8 +33,9 @@ function somarMunicipio(acc, lugar, lido) {
 }
 
 async function somarTurno(acc, { ano, turno, codigo, municipios, buscarJson }) {
-  const existe = await buscarJson(urlDoMunicipio(ano, codigo, municipios[0].uf, municipios[0].cd));
-  if (!existe) return false;
+  const primeiro = urlDoMunicipio(ano, codigo, municipios[0].uf, municipios[0].cd), existe = await buscarJson(primeiro);
+  if (!existe) { console.log(`  API nacional ${ano} t${turno}: ainda sem resultado em ${primeiro}`); return false; }
+  if (!lerResultadoDoMunicipio(existe)?.comparecimento) console.log(`  API nacional ${ano} t${turno}: sem totais de comparecimento; campos de carg[0]: ${Object.keys(existe.carg?.[0] || {}).join(',')}`);
   await paralelo(municipios, PEDIDOS_SIMULTANEOS, async m => {
     const lido = lerResultadoDoMunicipio(await buscarJson(urlDoMunicipio(ano, codigo, m.uf, m.cd)));
     if (lido) somarMunicipio(acc, { turno, uf: m.uf.toUpperCase(), cd: m.cd, nome: m.nome }, lido);
@@ -46,8 +47,9 @@ async function somarTurno(acc, { ano, turno, codigo, municipios, buscarJson }) {
 // Soma em `acc` os turnos que `faltando(turno)` pedir. Devolve quantos turnos foram adicionados.
 export async function completarNacionalViaApi(ano, acc, faltando, buscarJson = getJson) {
   const eleicao = (await eleicoesDoAno(ano, buscarJson)).find(e => e.tp === '1');
-  if (!eleicao) return 0;
+  if (!eleicao) { console.log(`  API nacional ${ano}: eleição não encontrada na configuração`); return 0; }
   const municipios = await municipiosDoPais(ano, eleicao, buscarJson);
+  console.log(`  API nacional ${ano}: eleição ${eleicao.cd} (2º turno ${eleicao.cdt2 || 'sem código'}), ${municipios.length} municípios na configuração`);
   if (!municipios.length) return 0;
   let adicionados = 0;
   for (const [turno, codigo] of [['1', eleicao.cd], ['2', eleicao.cdt2]]) {
