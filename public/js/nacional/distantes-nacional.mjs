@@ -3,7 +3,7 @@
 import { nf, nomeDeQuem } from '../formato.mjs';
 import { Cartao, Aviso } from '../cartao.mjs';
 import { Abas } from '../estrutura.mjs';
-import { nomeDaUf } from './grade-de-ufs.mjs';
+import { siglaDaUf } from './ufs.mjs';
 import { semOsDestacados } from './calculos-distantes.mjs';
 const { html, useState } = window.htmPreact;
 
@@ -18,7 +18,7 @@ const pp = v => `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v * 100).toLocale
 function Tabela({ lista, nome }) {
   return html`<div class="calor-rolagem"><table class="tabela-nacional"><caption class="so-leitor">${nome}</caption>
     <thead><tr><th scope="col">Município</th><th scope="col">Mudança</th><th scope="col">Típico na UF</th><th scope="col">Saldo no 2º turno</th></tr></thead>
-    <tbody>${lista.slice(0, MOSTRAR).map(m => html`<tr><th scope="row">${nomeDeQuem(m.nome)} <small>${nomeDaUf(m.uf)}</small></th><td>${pp(m.valor)}</td><td>${pp(m.esperado)}</td><td>${nf.format(m.saldo)}</td></tr>`)}</tbody></table></div>`;
+    <tbody>${lista.slice(0, MOSTRAR).map(m => html`<tr><th scope="row">${nomeDeQuem(m.nome)} <small>${siglaDaUf(m.uf)}</small></th><td>${pp(m.valor)}</td><td>${pp(m.esperado)}</td><td>${nf.format(m.saldo)}</td></tr>`)}</tbody></table></div>`;
 }
 
 function Efeito({ nac, lista, turno, candidatos }) {

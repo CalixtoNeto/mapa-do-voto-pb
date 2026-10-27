@@ -40,6 +40,10 @@ jobs:
       - name: Testar o gerador antes de usá-lo
         run: npm test
 
+      # Malha das UFs do IBGE para o mapa; só é baixada se ainda não existir no repositório.
+      - name: Gerar a malha do Brasil
+        run: '[ -f public/data/br.topo.json ] || node scripts/gerar-malha-brasil.mjs'
+
       - name: Gerar o cenário nacional
         env:
           NACIONAL_DEBUG: 1
@@ -51,7 +55,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add public/data/nacional
+          git add public/data/nacional public/data/br.topo.json
           if git diff --cached --quiet; then echo "Nenhuma mudança nos dados."; exit 0; fi
           git commit -m "dados: cenário nacional ($ANO) atualizado pelo workflow"
           git pull --rebase

@@ -5,7 +5,8 @@ import { SeletorDeAno } from '../perfil/cabecalho-perfil.mjs';
 import { usarIndiceNacional, usarNacional } from './dados-nacional.mjs';
 import { linhasDoTurno, totaisDasLinhas, totaisPorUf } from './calculos-nacional.mjs';
 import { municipiosDistantes } from './calculos-distantes.mjs';
-import { GradeDeUfs, nomeDaUf } from './grade-de-ufs.mjs';
+import { MapaDoBrasil, SeletorDeUf } from './mapa-do-brasil.mjs';
+import { nomeDaUf } from './ufs.mjs';
 import { ResumoDoRecorte } from './resumo-nacional.mjs';
 import { ConferenciasNacionais } from './conferencias-nacional.mjs';
 import { DistantesNacionais } from './distantes-nacional.mjs';
@@ -20,6 +21,7 @@ function indicadores(t, cands) {
 }
 
 function Conteudo({ nac, turno, uf, setUf }) {
+  const [candidato, setCandidato] = useState(0);
   const dados = useMemo(() => {
     const linhas = linhasDoTurno(nac, turno), anterior = turno === '1' ? null : linhasDoTurno(nac, '1');
     return { linhas, totais: totaisDasLinhas(linhas), ufs: totaisPorUf(linhas), anterior, distantes: anterior && nac.turnos['1'] ? municipiosDistantes(nac, { primeiro: turno, anterior: '1' }) : null };
@@ -28,8 +30,11 @@ function Conteudo({ nac, turno, uf, setUf }) {
   const antesDaUf = uf && dados.anterior ? totaisDasLinhas(dados.anterior.filter(l => l.uf === uf)) : null;
   return html`<${Indicadores} itens=${indicadores(dados.totais, cands)} />
     <${Bloco} id="nc-ufs" titulo="Como cada estado votou" colunas="metade"
-        lede="Cada quadrado é um estado, na posição aproximada do mapa; a cor é de quem venceu e fica mais forte com a parcela. Toque num estado para ver os números dele.">
-      <div class="cartao"><${GradeDeUfs} ufs=${dados.ufs} cands=${cands} uf=${uf} aoEscolher=${setUf} /></div>
+        lede="A cor de cada estado vai do roxo ao amarelo conforme a parcela do candidato escolhido nos votos válidos: é uma escala neutra, sem cor de partido. Toque num estado para ver os números dele.">
+      <div class="cartao">
+        <${Abas} itens=${cands.slice(0, 4).map((c, i) => [String(i), nomeDeQuem(c.urna)])} valor=${String(candidato)} aoMudar=${i => setCandidato(+i)} rotulo="Candidato que dá a cor" estilo="pilula" />
+        <${MapaDoBrasil} ufs=${dados.ufs} valorDe=${u => u.votos[candidato] / (u.validos || 1)} uf=${uf} aoEscolher=${setUf} rotulo=${`Parcela de ${nomeDeQuem(cands[candidato].urna)} nos votos válidos`} />
+        <${SeletorDeUf} ufs=${dados.ufs} uf=${uf} aoEscolher=${setUf} /></div>
       <${ResumoDoRecorte} titulo=${uf ? nomeDaUf(uf) : 'Brasil'} t=${daUf || dados.totais} anterior=${uf ? antesDaUf : dados.anterior && totaisDasLinhas(dados.anterior)} cands=${cands} /><//>
     <${Bloco} id="nc-contas" titulo="Auditoria: as contas fecham?" lede="Conferências que qualquer pessoa pode refazer com os arquivos abertos do TSE.">
       <${ConferenciasNacionais} linhas=${dados.linhas} totais=${dados.totais} tse=${nac.tse?.[turno]} turno=${turno} /><//>
