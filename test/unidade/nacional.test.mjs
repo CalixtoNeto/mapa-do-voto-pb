@@ -75,3 +75,21 @@ test('turnoCompleto e descartarTurno: só vale o turno com votos e compareciment
   assert.equal(acc.candidatos.has('2|13'), true);
   assert.equal(turnoCompleto(acc, '3'), false);
 });
+
+test('anulados: votos nominais que não são válidos entram à parte, por município e turno, e só quando existem', async () => {
+  const acc = novoAcumulador();
+  somarVotoNacional(acc, sp, lula, 600, 4); somarVotoNacional(acc, sp, flavio, 300, 0); somarVotoNacional(acc, rio, lula, 10);
+  assert.equal(acc.municipios.get('71072').turnos['2'].anulados, 4);
+  const n = montarNacional(acc, { ano: '2026', fonte: 'csv' });
+  assert.deepEqual(n.municipios.map(m => m[4]), [undefined, { 2: 4 }]);
+});
+
+const CAB_ANULADOS = CAB_VOTOS + ';"QT_VOTOS_NOMINAIS"';
+
+test('leitor de votos: anulados = nominais − nominais válidos, quando o arquivo traz as duas colunas', () => {
+  const acc = novoAcumulador(), aoLinha = leitorDeVotosNacionais({ ano: '2026', acc });
+  aoLinha(CAB_ANULADOS, true);
+  aoLinha(votos({ v: '10' }) + ';"13"', false);
+  assert.equal(acc.municipios.get('71072').turnos['2'].anulados, 3);
+  assert.equal(acc.municipios.get('71072').turnos['2'].votos.get('13'), 10);
+});

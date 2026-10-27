@@ -19,7 +19,7 @@ const nac = {
 test('linhas do turno: só os municípios que têm o turno, com os campos nomeados', () => {
   const l = linhasDoTurno(nac, '2');
   assert.equal(l.length, 3);
-  assert.deepEqual(l[0], { cd: '1', uf: 'AA', nome: 'M1', aptos: 1000, comp: 850, brancos: 10, nulos: 20, votos: [500, 320] });
+  assert.deepEqual(l[0], { cd: '1', uf: 'AA', nome: 'M1', aptos: 1000, comp: 850, brancos: 10, nulos: 20, votos: [500, 320], anulados: 0 });
 });
 
 test('totais: soma, abstenção, válidos e a margem entre o primeiro e o segundo', () => {
@@ -42,6 +42,15 @@ test('conferir somas: aponta o município em que válidos + brancos + nulos não
   assert.deepEqual(ok.maisQueAptos, []);
   const l = linhasDoTurno(nac, '2'); l[0].comp = 1100;
   assert.deepEqual(conferirSomas(l).maisQueAptos.map(m => m.cd), ['1']);
+});
+
+test('conferir somas: os anulados entram na conta e a linha traz o campo', () => {
+  const comAnulados = { ...nac, municipios: nac.municipios.map(m => m[0] === '3' ? [...m.slice(0, 4), { 2: 10 }] : m) };
+  const l = linhasDoTurno(comAnulados, '2');
+  assert.equal(l.find(x => x.cd === '3').anulados, 10);
+  assert.equal(l.find(x => x.cd === '1').anulados, 0);
+  assert.deepEqual(conferirSomas(l).naoFecham, []);
+  assert.equal(conferirSomas(l).anulados, 10);
 });
 
 test('conferir com o TSE: diferença de cada total; sem total do TSE devolve null', () => {

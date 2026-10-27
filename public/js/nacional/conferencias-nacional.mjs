@@ -19,8 +19,9 @@ export function ConferenciasNacionais({ linhas, totais, tse, turno }) {
   const diverge = comTse?.filter(c => c.diferenca !== 0) || [];
   return html`<${Cartao} tipo="Conferências" titulo=${`As contas do ${turno}º turno fecham?`} sub=${`${nf.format(somas.municipios)} municípios e zonas do exterior conferidos.`}>
     <ul class="conferencias">
-      <${Item} ok=${!somas.naoFecham.length} titulo="Válidos + brancos + nulos = comparecimento"
-        detalhe=${somas.naoFecham.length ? `${nf.format(somas.naoFecham.length)} municípios não fecham (diferença total de ${nf.format(somas.diferenca)} votos).${exemplos(somas.naoFecham)}` : 'Em todos os municípios.'} />
+      <${Item} ok=${!somas.naoFecham.length} titulo="Válidos + anulados + brancos + nulos = comparecimento"
+        detalhe=${somas.naoFecham.length ? `${nf.format(somas.naoFecham.length)} municípios não fecham (diferença total de ${nf.format(somas.diferenca)} votos).${exemplos(somas.naoFecham)}`
+          : `Em todos os municípios.${somas.anulados ? ` Os ${nf.format(somas.anulados)} votos anulados (candidatura indeferida ou sub judice) não entram nos válidos.` : ''}`} />
       <${Item} ok=${!somas.maisQueAptos.length} titulo="Ninguém comparece mais do que o eleitorado apto"
         detalhe=${somas.maisQueAptos.length ? `${nf.format(somas.maisQueAptos.length)} municípios.${exemplos(somas.maisQueAptos)}` : 'Em todos os municípios.'} />
       ${comTse ? html`<${Item} ok=${!diverge.length} titulo="A soma dos municípios bate com o total nacional do TSE"

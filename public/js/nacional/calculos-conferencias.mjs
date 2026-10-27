@@ -1,10 +1,11 @@
 // Conferências de consistência (sem DOM): as contas que qualquer um pode refazer com os arquivos do TSE.
 
-// Em cada município, votos válidos + brancos + nulos devem dar o comparecimento, e ninguém comparece mais do que o eleitorado apto.
+// Em cada município, votos válidos + anulados + brancos + nulos devem dar o comparecimento, e ninguém comparece mais do que o eleitorado apto.
+// Anulados são votos em candidatura indeferida ou sub judice: contam no comparecimento e não nos válidos.
 export function conferirSomas(linhas) {
-  const contados = l => l.votos.reduce((s, v) => s + v, 0) + l.brancos + l.nulos;
+  const contados = l => l.votos.reduce((s, v) => s + v, 0) + l.brancos + l.nulos + (l.anulados || 0);
   const naoFecham = linhas.filter(l => contados(l) !== l.comp);
-  return { municipios: linhas.length, naoFecham, diferenca: naoFecham.reduce((s, l) => s + l.comp - contados(l), 0),
+  return { municipios: linhas.length, naoFecham, anulados: linhas.reduce((s, l) => s + (l.anulados || 0), 0), diferenca: naoFecham.reduce((s, l) => s + l.comp - contados(l), 0),
     maisQueAptos: linhas.filter(l => l.comp > l.aptos) };
 }
 

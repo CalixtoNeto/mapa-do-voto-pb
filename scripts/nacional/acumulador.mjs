@@ -7,12 +7,14 @@ const chaveDoMunicipio = cd => String(parseInt(cd, 10));
 function doMunicipio(acc, { uf, cd, nome, turno }) {
   const chave = chaveDoMunicipio(cd), m = acc.municipios.get(chave) || { uf, nome, turnos: {} };
   acc.municipios.set(chave, m);
-  return m.turnos[turno] ||= { votos: new Map(), comparecimento: [0, 0, 0, 0] };
+  return m.turnos[turno] ||= { votos: new Map(), comparecimento: [0, 0, 0, 0], anulados: 0 };
 }
 
-export function somarVotoNacional(acc, lugar, candidato, votos) {
+// anulados: votos nominais que não entram nos válidos (candidatura indeferida ou sub judice); contam no comparecimento.
+export function somarVotoNacional(acc, lugar, candidato, votos, anulados = 0) {
   const turno = doMunicipio(acc, lugar), chave = `${lugar.turno}|${candidato.nr}`;
   turno.votos.set(candidato.nr, (turno.votos.get(candidato.nr) || 0) + votos);
+  turno.anulados += anulados;
   const conhecido = acc.candidatos.get(chave) || { ...candidato, total: 0 };
   conhecido.total += votos;
   if (candidato.sit && !candidato.sit.startsWith('#')) conhecido.sit = candidato.sit;
