@@ -25,7 +25,7 @@ function novoMunicipio(s, uf) {
 
 function somarSecao(m, s, numeros, marcas) {
   m.lidas++;
-  somar(m.totais, [s.aptos, s.comparecimento, ...s.porIdentificacao, s.brancos, s.nulos]);
+  somar(m.totais, [s.aptos, s.comparecimento, ...(s.porIdentificacao || [0, 0, 0]), s.brancos, s.nulos]);
   somar(m.marcas, [marcas.semDigital, marcas.abriuTarde, marcas.fechouTarde, marcas.prorrogada].map(Number));
   somar(marcas.prorrogada ? m.prorrog : m.normal, [1, s.comparecimento, ...votosDe(s, numeros)]);
 }
@@ -42,7 +42,7 @@ export function agregarSecoes(lidas, { uf, numeros }) {
     if (s.erro) { m.semBoletim++; continue; }
     const marcas = classificar(s), marca = marcaAtipica(marcas, s);
     somarSecao(m, s, numeros, marcas);
-    if (marca) atipicas.push([uf, s.municipio, s.zona, s.secao, marca, s.comparecimento, Math.round(100 * s.porIdentificacao[BIOMETRIA] / s.comparecimento) || 0,
+    if (marca) atipicas.push([uf, s.municipio, s.zona, s.secao, marca, s.comparecimento, Math.round(100 * s.porIdentificacao?.[BIOMETRIA] / s.comparecimento) || 0,
       s.abertura.slice(11, 16), s.encerramento.slice(11, 16), ...votosDe(s, numeros)]);
   }
   const municipios = [...porMunicipio.values()].map(m => [m.cd, m.uf, m.nome, m.lidas, m.semBoletim, ...m.totais, ...m.marcas, m.normal, m.prorrog]);
