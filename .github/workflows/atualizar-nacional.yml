@@ -1,0 +1,57 @@
+name: Atualizar o cenário nacional
+
+# Acionado à mão (Actions > Atualizar o cenário nacional > Run workflow), por exemplo depois de um 2º turno.
+# Gera public/data/nacional/ANO.json com o presidente de todos os municípios do país (Dados Abertos do TSE e,
+# para o turno que o CSV ainda não tem, a API de resultados), commita no repositório e dispara a publicação do site.
+on:
+  workflow_dispatch:
+    inputs:
+      ano:
+        description: 'Anos de eleição geral separados por espaço (por exemplo, 2026 ou 2014 2018 2022 2026)'
+        required: true
+        type: string
+
+permissions:
+  contents: write   # commitar os dados gerados
+  actions: write    # disparar a publicação do site
+
+concurrency:
+  group: atualizar-nacional
+  cancel-in-progress: false
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    env:
+      ANO: ${{ inputs.ano }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Testar o gerador antes de usá-lo
+        run: npm test
+
+      - name: Gerar o cenário nacional
+        run: |
+          [[ "$ANO" =~ ^[0-9]{4}( [0-9]{4})*$ ]] || { echo "Anos inválidos: $ANO"; exit 1; }
+          node scripts/gerar-nacional.mjs $ANO --forcar
+
+      - name: Commitar e publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nacional
+          if git diff --cached --quiet; then echo "Nenhuma mudança nos dados."; exit 0; fi
+          git commit -m "dados: cenário nacional ($ANO) atualizado pelo workflow"
+          git pull --rebase
+          git push
+          gh workflow run pages.yml
