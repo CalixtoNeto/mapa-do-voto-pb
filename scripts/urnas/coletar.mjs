@@ -26,7 +26,7 @@ const raiz = (ano, pleito, uf) => `${API}/ele${ano}/arquivo-urna/${pleito}`;
 export async function secoesDaUf({ ano, pleito, uf }, buscarJson = getJson) {
   const config = await buscarJson(`${raiz(ano, pleito)}/config/${uf}/${uf}-p${pad(pleito, 6)}-cs.json`);
   return (config?.abr?.[0]?.mu || []).flatMap(m => m.zon.flatMap(z => z.sec.map(s =>
-    ({ municipio: m.cd, nome: m.nm, zona: z.cd, secao: s.ns, recebidoEm: `${s.da} ${s.ha}` }))));
+    ({ municipio: m.cd, nome: m.nm, zona: z.cd, secao: s.ns, recebidoEm: s.da ? `${s.da} ${s.ha}` : null }))));
 }
 
 export async function coletarSecao({ ano, pleito, uf }, s, { buscarJson = getJson, baixar = baixarBytes } = {}) {
