@@ -23,7 +23,7 @@ export async function completarViaApi(ano, porTurno, faltando, buscarJson = getJ
   return adicionados;
 }
 
-async function eleicoesDoAno(ano, buscarJson) {
+export async function eleicoesDoAno(ano, buscarJson) {
   const config = await buscarJson(`${API}/comum/config/ele-c.json`);
   return (config?.pl || []).filter(p => p.c === `ele${ano}`).flatMap(p => p.e)
     .filter(e => TIPOS_DE_ELEICAO_DO_SITE.includes(e.tp));
