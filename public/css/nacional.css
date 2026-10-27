@@ -1,5 +1,5 @@
 /* ---------- Cenário nacional: cartograma das UFs, números do recorte, conferências e tabela de municípios distantes ---------- */
-.grade-ufs{display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); grid-auto-rows:minmax(0,1fr); gap:4px; max-width:520px; margin:0 auto}
+.grade-ufs{display:grid; width:100%; grid-template-columns:repeat(9,minmax(0,1fr)); grid-auto-rows:minmax(0,1fr); gap:4px; max-width:520px; margin:0 auto}
 .grade-ufs .quadrado{display:flex; flex-direction:column; align-items:center; justify-content:center; aspect-ratio:1; min-width:0; padding:0; border:1px solid var(--line); border-radius:6px; color:var(--ink); cursor:pointer}
 .grade-ufs .quadrado b{font:600 13px/1.1 var(--sans)} .grade-ufs .quadrado small{font-size:11px; opacity:.85}
 .grade-ufs .quadrado.ativo{outline:2px solid var(--ink); outline-offset:1px}

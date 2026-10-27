@@ -24,7 +24,8 @@ function Tabela({ lista, nome }) {
 function Efeito({ nac, lista, turno, candidato }) {
   if (!lista.length) return null;
   const e = semOsDestacados(nac, lista, turno), lado = n => n >= 0 ? candidato : 'o outro candidato';
-  return html`<p class="efeito">Os ${nf.format(e.destacados)} municípios desta lista somam um saldo de ${nf.format(Math.abs(e.saldoDeles))} votos para ${lado(e.saldoDeles)}.
+  const quem = e.destacados === 1 ? 'O município desta lista soma' : `Os ${nf.format(e.destacados)} municípios desta lista somam`;
+  return html`<p class="efeito">${quem} um saldo de ${nf.format(Math.abs(e.saldoDeles))} votos para ${lado(e.saldoDeles)}.
     Sem eles, a vantagem nacional de ${nf.format(Math.abs(e.margemTotal))} votos seria de ${nf.format(Math.abs(e.margemSemEles))}${e.margemSemEles * e.margemTotal < 0 ? ' para o outro lado' : ''}.</p>`;
 }
 
