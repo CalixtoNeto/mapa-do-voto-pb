@@ -38,6 +38,7 @@ async function gerarAno(ano) {
 }
 
 const args = process.argv.slice(2), forcar = args.includes('--forcar');
+if (args.includes('sondar-urnas')) { await (await import('./urnas/sondar.mjs')).sondar(args.find(a => /^\d{4}$/.test(a))); process.exit(0); }
 const anos = args.filter(a => /^\d{4}$/.test(a));
 for (const ano of anos.length ? anos : ANOS_PADRAO) {
   if (forcar || !existsSync(`${PASTA}/${ano}.json`)) await gerarAno(ano);
