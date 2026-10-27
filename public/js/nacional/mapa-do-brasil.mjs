@@ -18,24 +18,24 @@ function usarMalha() {
   return features;
 }
 
-export function LegendaViridis({ minimo, maximo, rotulo }) {
+export function LegendaViridis({ minimo, maximo, rotulo, casas = 0 }) {
   return html`<div class="legenda-viridis"><span class="rotulo">${rotulo}</span>
-    <div class="faixa-viridis" style=${`background:linear-gradient(90deg,${PARADAS_VIRIDIS.join(',')})`} role="img" aria-label=${`Do roxo (${pct(minimo, 0)}) ao amarelo (${pct(maximo, 0)})`}></div>
-    <div class="extremos"><span>${pct(minimo, 0)}</span><span>${pct(maximo, 0)}</span></div></div>`;
+    <div class="faixa-viridis" style=${`background:linear-gradient(90deg,${PARADAS_VIRIDIS.join(',')})`} role="img" aria-label=${`Do roxo (${pct(minimo, casas)}) ao amarelo (${pct(maximo, casas)})`}></div>
+    <div class="extremos"><span>${pct(minimo, casas)}</span><span>${pct(maximo, casas)}</span></div></div>`;
 }
 
-function Estado({ f, projetar, u, t, valor, selecionado, aoEscolher }) {
+function Estado({ f, projetar, u, t, valor, selecionado, aoEscolher, casas }) {
   const sigla = f.properties.sigla, cor = corViridis(t), c = centroDaGeometria(f.geometry, projetar);
   const rotulo = c.largura > 34 && c.altura > 24;
   const escolher = () => aoEscolher(selecionado ? null : u.uf);
-  return html`<g class=${'uf' + (selecionado ? ' ativa' : '')} role="button" tabindex="0" aria-pressed=${selecionado} aria-label=${`${nomeDaUf(sigla)}: ${pct(valor, 1)}`}
+  return html`<g class=${'uf' + (selecionado ? ' ativa' : '')} role="button" tabindex="0" aria-pressed=${selecionado} aria-label=${`${nomeDaUf(sigla)}: ${pct(valor, casas + 1)}`}
       onClick=${escolher} onKeyDown=${e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escolher(); } }}>
-    <path d=${caminhoDaGeometria(f.geometry, projetar)} style=${`fill:${cor}`}><title>${`${nomeDaUf(sigla)}: ${pct(valor, 1)}`}</title></path>
-    ${rotulo && html`<text x=${c.x} y=${c.y} text-anchor="middle" style=${`fill:${textoSobre(cor)}`}><tspan class="sigla">${sigla}</tspan>${c.altura > 34 && html`<tspan x=${c.x} dy="12" class="valor">${pct(valor, 0)}</tspan>`}</text>`}</g>`;
+    <path d=${caminhoDaGeometria(f.geometry, projetar)} style=${`fill:${cor}`}><title>${`${nomeDaUf(sigla)}: ${pct(valor, casas + 1)}`}</title></path>
+    ${rotulo && html`<text x=${c.x} y=${c.y} text-anchor="middle" style=${`fill:${textoSobre(cor)}`}><tspan class="sigla">${sigla}</tspan>${c.altura > 34 && html`<tspan x=${c.x} dy="12" class="valor">${pct(valor, casas)}</tspan>`}</text>`}</g>`;
 }
 
 // ufs: [{ uf, ... }]; valorDe(u): fração de 0 a 1 de cada UF; uf: a escolhida (ou null).
-export function MapaDoBrasil({ ufs, valorDe, uf, aoEscolher, rotulo }) {
+export function MapaDoBrasil({ ufs, valorDe, uf, aoEscolher, rotulo, casas = 0 }) {
   const features = usarMalha(), projetar = useMemo(() => projecaoDoBrasil(CAIXA, LARGURA), []);
   const doMapa = ufs.filter(u => u.uf !== 'ZZ'), valores = doMapa.map(valorDe), [minimo, maximo] = [Math.min(...valores), Math.max(...valores)];
   const porSigla = new Map(doMapa.map(u => [u.uf, u]));
@@ -43,8 +43,8 @@ export function MapaDoBrasil({ ufs, valorDe, uf, aoEscolher, rotulo }) {
   if (!features) return html`<p class="hint">A malha do Brasil ainda não foi gerada: escolha o estado na lista abaixo.</p>`;
   return html`<div class="mapa-brasil"><svg viewBox=${`0 0 ${LARGURA} ${Math.round(projetar.altura)}`} role="group" aria-label=${rotulo}>
     ${features.filter(f => porSigla.has(f.properties.sigla)).map(f => { const u = porSigla.get(f.properties.sigla), v = valorDe(u);
-      return html`<${Estado} f=${f} projetar=${projetar} u=${u} valor=${v} t=${maximo > minimo ? (v - minimo) / (maximo - minimo) : 0.5} selecionado=${uf === u.uf} aoEscolher=${aoEscolher} />`; })}
-  </svg><${LegendaViridis} minimo=${minimo} maximo=${maximo} rotulo=${rotulo} /></div>`;
+      return html`<${Estado} f=${f} projetar=${projetar} u=${u} valor=${v} t=${maximo > minimo ? (v - minimo) / (maximo - minimo) : 0.5} selecionado=${uf === u.uf} aoEscolher=${aoEscolher} casas=${casas} />`; })}
+  </svg><${LegendaViridis} minimo=${minimo} maximo=${maximo} rotulo=${rotulo} casas=${casas} /></div>`;
 }
 
 export function SeletorDeUf({ ufs, uf, aoEscolher }) {

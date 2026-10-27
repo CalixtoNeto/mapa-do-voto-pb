@@ -52,6 +52,8 @@ Site estático (`public/`) com dados gerados por `scripts/gerar-dados.mjs` a par
   (a soma das seções bate com os totais oficiais). O grupo do meio de `porIdentificacao` é tratado como biometria (o maior dos três); horários são a hora local da urna.
   Linha de município: `[cd, uf, nome, lidas, semBoletim, aptos, comparecimento, g0, g1(biometria), g2, brancos, nulos, semDigital, abriuTarde, fechouTarde, prorrogadas, [seções, comparecimento, A, B] normais, [..] prorrogadas]`;
   atípica: `[uf, cd, zona, seção, marca (1 sem digital, 2 abriu mais de 1 h tarde), comparecimento, % biometria, abertura, encerramento, A, B]`.
+  Seção sem o grupo de identificação (parte do exterior) conta o comparecimento e fica fora da biometria. O site lê o arquivo em `public/js/nacional/{dados-urnas,urnas-nacional,atipicas-urnas,prorrogadas-urnas}.mjs`
+  (cálculos em `calculos-urnas.mjs`, testados em `test/unidade/calculos-urnas.test.mjs`); o texto sempre diz que biometria é o grupo do meio, não rotulado pelo TSE, e que é comparação estatística.
 
 ## Como o código está organizado
 
