@@ -45,8 +45,6 @@ jobs:
         run: '[ -f public/data/br.topo.json ] || node scripts/gerar-malha-brasil.mjs'
 
       - name: Gerar o cenário nacional
-        env:
-          NACIONAL_DEBUG: 1
         run: |
           [[ "$ANO" =~ ^[0-9]{4}( [0-9]{4})*$ ]] || { echo "Anos inválidos: $ANO"; exit 1; }
           node scripts/gerar-nacional.mjs $ANO --forcar

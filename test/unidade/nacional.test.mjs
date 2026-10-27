@@ -93,3 +93,12 @@ test('leitor de votos: anulados = nominais − nominais válidos, quando o arqui
   assert.equal(acc.municipios.get('71072').turnos['2'].anulados, 3);
   assert.equal(acc.municipios.get('71072').turnos['2'].votos.get('13'), 10);
 });
+
+const CAB_COMP_2026 = CAB_COMP + ';"QT_TOTAL_VOTOS_NULOS";"QT_VOTOS_NULOS_TECNICOS"';
+
+test('leitor de comparecimento: nulos são o total (nulos do eleitor + técnicos), que é o que fecha com o comparecimento', () => {
+  const acc = novoAcumulador(), aoLinha = leitorDeComparecimentoNacional({ ano: '2026', acc });
+  aoLinha(CAB_COMP_2026, true);
+  aoLinha(comp() + ';"10";"3"', false);
+  assert.deepEqual(acc.municipios.get('71072').turnos['2'].comparecimento, [100, 80, 3, 10]);
+});

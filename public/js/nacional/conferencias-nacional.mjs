@@ -30,5 +30,6 @@ export function ConferenciasNacionais({ linhas, totais, tse, turno }) {
     </ul>
     <${ComoLer} titulo="O que estas conferências provam (e o que não provam)">
       <p>São contas de consistência sobre os arquivos de resultado por município e zona. Se elas fecham, a soma não tem erro de arquivo; isso não substitui a auditoria
-      das urnas, que é feita com os boletins e os registros digitais de cada seção.</p><//><//>`;
+      das urnas, que é feita com os boletins e os registros digitais de cada seção.</p>
+      <p>Os nulos incluem os nulos técnicos que o TSE informa à parte (por exemplo, 5.246 votos no 1º turno de 2026): sem eles, a conta do comparecimento ficaria menor que o total.</p><//><//>`;
 }
