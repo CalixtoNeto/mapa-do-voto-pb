@@ -2,6 +2,7 @@
 import { API, getJson, pad } from '../lib/tse.mjs';
 import { inteiro } from '../lib/csv.mjs';
 import { eleicoesDoAno } from './api-resultados.mjs';
+import { eleicaoDoPresidente } from './nacional-api.mjs';
 
 const CHAVES = ['ea', 'c', 'a', 'vb', 'vn', 'vv'];
 const temTotais = bloco => bloco && CHAVES.every(chave => bloco[chave] != null);
@@ -15,7 +16,7 @@ export function numerosDoTse(arquivo) {
 }
 
 export async function totaisNacionaisDoTse(ano, buscarJson = getJson) {
-  const eleicao = (await eleicoesDoAno(ano, buscarJson)).find(e => e.tp === '1');
+  const eleicao = eleicaoDoPresidente(await eleicoesDoAno(ano, buscarJson));
   const totais = {};
   for (const [turno, codigo] of [['1', eleicao?.cd], ['2', eleicao?.cdt2]]) {
     if (!codigo) continue;
