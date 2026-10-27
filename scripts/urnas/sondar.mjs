@@ -13,17 +13,29 @@ async function pegar(url, binario = false) {
 }
 
 // Decodificador BER genérico só para ler a estrutura: tag, tamanho e, nas folhas, o texto ou o número.
-function ber(buf, ini = 0, fim = buf.length, nivel = 0, linhas = [], limite = 400) {
+// Folhas que por dentro são BER válido (envelopes em OCTET STRING) também são abertas.
+function cabecalho(buf, i, fim) {
+  if (i >= fim) return null;
+  const inicio = i, classe = buf[i] >> 6, construido = !!(buf[i] & 0x20); let tag = buf[i] & 0x1f; i++;
+  if (tag === 0x1f) { tag = 0; do { if (i >= fim) return null; tag = (tag << 7) | (buf[i] & 0x7f); } while (buf[i++] & 0x80); }
+  if (i >= fim) return null;
+  let tam = buf[i++]; if (tam & 0x80) { const n = tam & 0x7f; if (!n || n > 4 || i + n > fim) return null; tam = 0; for (let k = 0; k < n; k++) tam = tam * 256 + buf[i++]; }
+  return i + tam > fim ? null : { classe, construido, tag, tam, corpo: i, fim: i + tam };
+}
+function valido(buf, ini, fim) {
+  let i = ini, n = 0;
+  while (i < fim) { const h = cabecalho(buf, i, fim); if (!h || (h.classe === 0 && h.tag === 0 && !h.tam)) return false; if (h.construido && h.tam && !valido(buf, h.corpo, h.fim)) return false; i = h.fim; n++; }
+  return n > 0 && i === fim;
+}
+function ber(buf, ini = 0, fim = buf.length, nivel = 0, linhas = [], limite = 900) {
   let i = ini;
   while (i < fim && linhas.length < limite) {
-    const inicio = i, classe = buf[i] >> 6, construido = !!(buf[i] & 0x20); let tag = buf[i] & 0x1f; i++;
-    if (tag === 0x1f) { tag = 0; do { tag = (tag << 7) | (buf[i] & 0x7f); } while (buf[i++] & 0x80); }
-    let tam = buf[i++]; if (tam & 0x80) { const n = tam & 0x7f; tam = 0; for (let k = 0; k < n; k++) tam = tam * 256 + buf[i++]; }
-    if (tam === 0x80 || i + tam > fim) return linhas;
-    const rotulo = `${'  '.repeat(nivel)}[${'UACP'[classe]}${tag}]${construido ? '' : ''} len=${tam}`;
-    if (construido) { linhas.push(rotulo); ber(buf, i, i + tam, nivel + 1, linhas, limite); }
-    else { const c = buf.subarray(i, i + tam), texto = c.every(b => b >= 32 && b < 127) && tam ? ` "${c.toString('latin1')}"` : tam <= 8 ? ` 0x${c.toString('hex')} (${tam ? parseInt(c.toString('hex'), 16) : 0})` : ` hex:${c.subarray(0, 12).toString('hex')}…`; linhas.push(rotulo + texto); }
-    i += tam;
+    const h = cabecalho(buf, i, fim); if (!h) return linhas;
+    const rotulo = `${'  '.repeat(nivel)}[${'UACP'[h.classe]}${h.tag}] len=${h.tam}`, c = buf.subarray(h.corpo, h.fim);
+    if (h.construido) { linhas.push(rotulo); ber(buf, h.corpo, h.fim, nivel + 1, linhas, limite); }
+    else if (h.tam > 3 && valido(buf, h.corpo, h.fim)) { linhas.push(rotulo + ' (aninhado)'); ber(buf, h.corpo, h.fim, nivel + 1, linhas, limite); }
+    else linhas.push(rotulo + (c.every(b => b >= 32 && b < 127) && h.tam ? ` "${c.toString('latin1')}"` : h.tam <= 8 ? ` 0x${c.toString('hex')} (${h.tam ? parseInt(c.toString('hex'), 16) : 0})` : ` hex:${c.subarray(0, 16).toString('hex')}…`));
+    i = h.fim;
   }
   return linhas;
 }
@@ -51,11 +63,10 @@ export async function sondar(ano) {
     const j = await pegar(aux);
     if (!j) continue;
     console.log('  aux ->', JSON.stringify(j).slice(0, 1500));
-    const arquivos = acharArquivos(j), hash = j.hashes?.[0]?.hash ?? j.hash;
-    console.log('  arquivos achados:', JSON.stringify(arquivos), 'hash:', hash);
-    for (const [, nome] of arquivos.filter(a => /\.bu$/i.test(a[1]))) {
-      const bu = await pegar(`${base}/${hash}/${nome}`, true);
-      if (bu) { console.log('  BU hex inicial:', bu.subarray(0, 40).toString('hex')); console.log(ber(bu, 0, bu.length, 0, [], 700).join('\n')); }
+    const h = j.hashes?.[0], hash = h?.hash;
+    for (const a of (h?.arq || []).filter(x => x.tp === 'bu')) {
+      const bu = await pegar(`${base}/${hash}/${a.nm}`, true);
+      if (bu) { console.log('  BU hex inicial:', bu.subarray(0, 40).toString('hex')); console.log(ber(bu).join('\n')); }
     }
   }
 }
