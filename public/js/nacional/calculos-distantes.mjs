@@ -5,13 +5,15 @@ import { linhasDoTurno } from './calculos-nacional.mjs';
 
 const mediana = valores => { const o = [...valores].sort((a, b) => a - b), m = o.length >> 1; return o.length % 2 ? o[m] : (o[m - 1] + o[m]) / 2; };
 const MINIMO_POR_UF = 5, CORTE_DE_Z = 4;
+// Além dos 4 desvios, a diferença para o município típico precisa ser grande o bastante para importar (em fração: 0,05 = 5 p.p.).
+const DISTANCIA_MINIMA = { parcela: 0.05, abstencao: 0.05, brancoNulo: 0.02 };
 
 // z robusto: distância à mediana em desvios absolutos medianos (1,4826 faz o MAD valer como desvio padrão numa curva normal).
-function destacarNoGrupo(grupo) {
+function destacarNoGrupo(grupo, distanciaMinima) {
   if (grupo.length < MINIMO_POR_UF) return [];
   const centro = mediana(grupo.map(g => g.valor)), mad = mediana(grupo.map(g => Math.abs(g.valor - centro))) * 1.4826;
   if (!mad) return [];
-  return grupo.map(g => ({ ...g, esperado: centro, z: (g.valor - centro) / mad })).filter(g => Math.abs(g.z) >= CORTE_DE_Z);
+  return grupo.map(g => ({ ...g, esperado: centro, z: (g.valor - centro) / mad })).filter(g => Math.abs(g.z) >= CORTE_DE_Z && Math.abs(g.valor - g.esperado) >= distanciaMinima);
 }
 
 const validos = l => l.votos.reduce((s, v) => s + v, 0);
@@ -38,7 +40,7 @@ export function municipiosDistantes(nac, { primeiro = '2', anterior = '1', minim
     if (doUf.length >= MINIMO_POR_UF) saida.testados += doUf.length;
     for (const [sinal, conta] of Object.entries(SINAIS)) {
       const grupo = doUf.map(({ l1, l2, i1 }) => ({ cd: l2.cd, uf, nome: l2.nome, valor: conta(l1, l2, i1), saldo: l2.votos[0] - l2.votos[1] }));
-      saida[sinal].push(...destacarNoGrupo(grupo));
+      saida[sinal].push(...destacarNoGrupo(grupo, DISTANCIA_MINIMA[sinal]));
     }
   }
   for (const sinal of Object.keys(SINAIS)) saida[sinal].sort((a, b) => Math.abs(b.z) - Math.abs(a.z));

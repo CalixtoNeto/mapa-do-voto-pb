@@ -79,6 +79,14 @@ test('distantes: destaca o município cuja mudança de parcela foge do conjunto 
   assert.equal(r.filter(x => x.nome !== 'Destaque').length, 0);
 });
 
+test('distantes: além de 4 desvios, a diferença para o típico precisa ser grande o bastante para importar (5 p.p. na parcela)', () => {
+  const n = nacionalComDestaque();
+  n.municipios[8][3][2] = [2000, 1650, 20, 30, 880, 720];
+  const r = municipiosDistantes(n, { primeiro: '2', anterior: '1' }).parcela;
+  assert.deepEqual(r.map(x => x.nome), ['Destaque'], 'P8 tem z alto mas só ~3 p.p. de diferença');
+  assert.ok(Math.abs(r[0].valor - r[0].esperado) >= 0.05);
+});
+
 test('distantes: estado com poucos municípios ou município pequeno não entra na conta', () => {
   assert.deepEqual(municipiosDistantes(nac, { primeiro: '2', anterior: '1' }), { parcela: [], abstencao: [], brancoNulo: [], testados: 0 });
   const pequeno = nacionalComDestaque(); pequeno.municipios[9][3][2] = [100, 90, 1, 1, 80, 8];

@@ -1,6 +1,6 @@
 // Cartograma das UFs: um quadrado por estado, na posição aproximada do mapa. A cor é de quem venceu e fica mais forte
 // quanto maior a parcela dos votos válidos. Não é um mapa: o tamanho não diz nada.
-import { pct } from '../formato.mjs';
+import { pct, nomeDeQuem } from '../formato.mjs';
 const { html } = window.htmPreact;
 
 // [linha, coluna] de cada UF; EX é o exterior.
@@ -25,5 +25,6 @@ export function GradeDeUfs({ ufs, cands, uf, aoEscolher }) {
     const lado = u.votos[0] >= u.votos[1] ? 0 : 1, parcela = Math.max(u.votos[0], u.votos[1]) / (u.validos || 1);
     return html`<button type="button" class=${'quadrado' + (uf === u.uf ? ' ativo' : '')} aria-pressed=${uf === u.uf} style=${`grid-row:${linha + 1};grid-column:${coluna + 1};background:${corDoQuadrado(u)}`}
       aria-label=${`${sigla}: ${cands[lado].urna} com ${pct(parcela, 1)} dos votos válidos`} onClick=${() => aoEscolher(uf === u.uf ? null : u.uf)}><b>${sigla}</b><small>${pct(parcela, 0)}</small></button>`;
-  })}</div>`;
+  })}</div>
+  <ul class="legenda-linha legenda-ufs"><li><i style="background:var(--r4)"></i>${nomeDeQuem(cands[0].urna)}</li><li><i style="background:var(--accent)"></i>${nomeDeQuem(cands[1].urna)}</li><li>Cor mais forte = parcela maior</li></ul>`;
 }

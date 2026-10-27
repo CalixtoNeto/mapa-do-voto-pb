@@ -34,7 +34,7 @@ function Conteudo({ nac, turno, uf, setUf }) {
     <${Bloco} id="nc-contas" titulo="Auditoria: as contas fecham?" lede="Conferências que qualquer pessoa pode refazer com os arquivos abertos do TSE.">
       <${ConferenciasNacionais} linhas=${dados.linhas} totais=${dados.totais} tse=${nac.tse?.[turno]} turno=${turno} /><//>
     ${dados.distantes && html`<${Bloco} id="nc-distantes" titulo="Municípios que mudaram diferente do estado" lede="Do 1º para o 2º turno, quem mais se afastou do município típico da própria UF.">
-      <${DistantesNacionais} nac=${nac} distantes=${dados.distantes} turno=${turno} candidato=${nomeDeQuem(cands[0].urna)} /><//>`}`;
+      <${DistantesNacionais} nac=${nac} distantes=${dados.distantes} turno=${turno} candidatos=${[nomeDeQuem(cands[0].urna), nomeDeQuem(cands[1].urna)]} /><//>`}`;
 }
 
 export function PaginaNacional() {

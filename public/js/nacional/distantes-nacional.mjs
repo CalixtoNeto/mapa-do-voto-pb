@@ -21,21 +21,21 @@ function Tabela({ lista, nome }) {
     <tbody>${lista.slice(0, MOSTRAR).map(m => html`<tr><th scope="row">${nomeDeQuem(m.nome)} <small>${nomeDaUf(m.uf)}</small></th><td>${pp(m.valor)}</td><td>${pp(m.esperado)}</td><td>${nf.format(m.saldo)}</td></tr>`)}</tbody></table></div>`;
 }
 
-function Efeito({ nac, lista, turno, candidato }) {
+function Efeito({ nac, lista, turno, candidatos }) {
   if (!lista.length) return null;
-  const e = semOsDestacados(nac, lista, turno), lado = n => n >= 0 ? candidato : 'o outro candidato';
+  const e = semOsDestacados(nac, lista, turno), lado = n => n >= 0 ? candidatos[0] : candidatos[1];
   const quem = e.destacados === 1 ? 'O município desta lista soma' : `Os ${nf.format(e.destacados)} municípios desta lista somam`;
   return html`<p class="efeito">${quem} um saldo de ${nf.format(Math.abs(e.saldoDeles))} votos para ${lado(e.saldoDeles)}.
-    Sem eles, a vantagem nacional de ${nf.format(Math.abs(e.margemTotal))} votos seria de ${nf.format(Math.abs(e.margemSemEles))}${e.margemSemEles * e.margemTotal < 0 ? ' para o outro lado' : ''}.</p>`;
+    Sem eles, a vantagem nacional de ${nf.format(Math.abs(e.margemTotal))} votos ${e.margemTotal >= 0 ? `de ${candidatos[0]}` : `de ${candidatos[1]}`} seria de ${nf.format(Math.abs(e.margemSemEles))}${e.margemSemEles * e.margemTotal < 0 ? ` votos para ${lado(e.margemSemEles)}` : ' votos'}.</p>`;
 }
 
-export function DistantesNacionais({ nac, distantes, turno, candidato }) {
+export function DistantesNacionais({ nac, distantes, turno, candidatos }) {
   const [sinal, setSinal] = useState('parcela'), lista = distantes[sinal], s = SINAIS[sinal];
   return html`<${Cartao} tipo="Valores distantes" titulo=${s.titulo} classe="largo"
       sub=${`Comparado ao município típico da mesma UF (${nf.format(distantes.testados)} municípios com ao menos 500 votos válidos nos dois turnos).`}
-      nota="Cada município é comparado só com os da sua UF. Destaca quem está a 4 desvios ou mais do típico. Saldo: votos do primeiro menos os do segundo colocado.">
+      nota="Cada município é comparado só com os da sua UF. Destaca quem está a 4 desvios ou mais do típico e a pelo menos 5 p.p. dele (2 p.p. nos brancos e nulos). Saldo: votos do primeiro menos os do segundo colocado.">
     <${Abas} itens=${Object.entries(SINAIS).map(([id, x]) => [id, `${x.rotulo} (${distantes[id].length})`])} valor=${sinal} aoMudar=${setSinal} rotulo="Tipo de mudança" estilo="pilula" />
-    ${lista.length ? html`<${Tabela} lista=${lista} nome=${s.titulo} /><${Efeito} nac=${nac} lista=${lista} turno=${turno} candidato=${candidato} />`
+    ${lista.length ? html`<${Tabela} lista=${lista} nome=${s.titulo} /><${Efeito} nac=${nac} lista=${lista} turno=${turno} candidatos=${candidatos} />`
       : html`<p class="hint">Nenhum município ficou tão distante do típico da UF nesta medida.</p>`}
     <${Aviso}>É uma comparação do site, não uma avaliação de legalidade: ela só diz quem mudou diferente dos vizinhos. Mudanças grandes têm causas conhecidas (candidato local forte, obras, chuvas, transporte no dia da votação).<//><//>`;
 }
