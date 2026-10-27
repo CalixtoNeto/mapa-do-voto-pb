@@ -1,6 +1,6 @@
 // Interface: Preact + htm, mapa em Canvas 2D.
 // startApp é chamado por main.js depois que a malha é carregada; AN são as análises (js/analises.mjs).
-function startApp(TOPO, AN, PERFIS) {
+function startApp(TOPO, AN, PERFIS, NACIONAL) {
 const { html, render, useState, useEffect, useMemo, useRef } = htmPreact;
 const NORM = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().replace(/[^A-Z0-9]+/g, ' ').trim();
 const UF = 'PB', UF_NOME = 'Paraíba', N_MUN = 223;
@@ -635,7 +635,7 @@ function App() {
     window.scrollTo(0, 0);
   };
 
-  const ABAS_DE_MODO = [['candidato', 'Candidato'], ['panorama', 'Panorama do cargo'], ['perfis', 'Perfil do estado']];
+  const ABAS_DE_MODO = [['candidato', 'Candidato'], ['panorama', 'Panorama do cargo'], ['perfis', 'Perfil do estado'], ['nacional', 'Cenário nacional']];
   const turnoDe = d => d.turno !== '1' ? ` · ${d.turno}º turno` : '';
   const topMunicipio = view && Object.keys(view.votos).filter(id => view.votos[id] > 0).map(id => ({ id, p: metricOf(view, id, 'pct') })).sort((a, b) => b.p - a.p)[0];
 
@@ -674,13 +674,13 @@ function App() {
       ${view && html`<${Legend} classes=${classes} metric=${metric} view=${view} modoVar=${cmp ? varModo : false} />`}
       <${MuniCard} view=${view} id=${shown} pinned=${!hover && !!selected} onClear=${() => setSelected(null)} det=${det} linha=${cmp && shown ? { ...(cmp.rows.find(r => r.id === shown) || { vAnt: 0, vRec: 0, d: 0, dp: 0 }), ant: cmp.ant, rec: cmp.rec } : null} />`;
 
-  return html`<div class=${'app' + (modo === 'perfis' ? ' com-perfis' : '')}>
+  return html`<div class=${'app' + (modo === 'perfis' || modo === 'nacional' ? ' com-perfis' : '')}>
     <header class="topo">
       <p class="brand">Mapa da política <span>${UF_NOME}</span></p>
       <${AN.Abas} itens=${ABAS_DE_MODO} valor=${modo} aoMudar=${trocarModo} rotulo="O que ver" />
     </header>
 
-    ${modo === 'perfis' ? html`<main class="perfis" id="conteudo"><${PERFIS.PaginaDePerfis} aoVerNoMapa=${verNoMapa} /></main>` : html`
+    ${modo === 'perfis' ? html`<main class="perfis" id="conteudo"><${PERFIS.PaginaDePerfis} aoVerNoMapa=${verNoMapa} /></main>` : modo === 'nacional' ? html`<main class="perfis" id="conteudo"><${NACIONAL.PaginaNacional} /></main>` : html`
     ${indice && html`<section class="filtros" aria-label="Filtros">
       <label class="field">Eleição
         <select value=${eleicao} onChange=${e => { setEleicao(e.target.value); setSelected(null); setCandKey(null); setComp(null); }}>
