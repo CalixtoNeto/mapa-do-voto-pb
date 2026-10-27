@@ -41,6 +41,8 @@ jobs:
         run: npm test
 
       - name: Gerar o cenário nacional
+        env:
+          NACIONAL_DEBUG: 1
         run: |
           [[ "$ANO" =~ ^[0-9]{4}( [0-9]{4})*$ ]] || { echo "Anos inválidos: $ANO"; exit 1; }
           node scripts/gerar-nacional.mjs $ANO --forcar
