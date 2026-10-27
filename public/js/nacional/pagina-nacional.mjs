@@ -10,6 +10,8 @@ import { nomeDaUf } from './ufs.mjs';
 import { ResumoDoRecorte } from './resumo-nacional.mjs';
 import { ConferenciasNacionais } from './conferencias-nacional.mjs';
 import { DistantesNacionais } from './distantes-nacional.mjs';
+import { CrescimentoDeVotos } from './crescimento-nacional.mjs';
+import { crescimentoDeVotos } from './calculos-crescimento.mjs';
 const { html, useState, useMemo } = window.htmPreact;
 
 function indicadores(t, cands) {
@@ -36,6 +38,8 @@ function Conteudo({ nac, turno, uf, setUf }) {
         <${MapaDoBrasil} ufs=${dados.ufs} valorDe=${u => u.votos[candidato] / (u.validos || 1)} uf=${uf} aoEscolher=${setUf} rotulo=${`Parcela de ${nomeDeQuem(cands[candidato].urna)} nos votos válidos`} />
         <${SeletorDeUf} ufs=${dados.ufs} uf=${uf} aoEscolher=${setUf} /></div>
       <${ResumoDoRecorte} titulo=${uf ? nomeDaUf(uf) : 'Brasil'} t=${daUf || dados.totais} anterior=${uf ? antesDaUf : dados.anterior && totaisDasLinhas(dados.anterior)} cands=${cands} /><//>
+    ${dados.anterior && nac.turnos['1'] && html`<${Bloco} id="nc-crescimento" titulo="Do 1º para o 2º turno" lede="Quanto cada candidato ganhou (ou perdeu) de votos em cada estado entre os dois turnos.">
+      <${CrescimentoDeVotos} dados=${crescimentoDeVotos(nac, { anterior: '1', turno })} anterior="1" turno=${turno} /><//>`}
     <${Bloco} id="nc-contas" titulo="Auditoria: as contas fecham?" lede="Conferências que qualquer pessoa pode refazer com os arquivos abertos do TSE.">
       <${ConferenciasNacionais} linhas=${dados.linhas} totais=${dados.totais} tse=${nac.tse?.[turno]} turno=${turno} /><//>
     ${dados.distantes && html`<${Bloco} id="nc-distantes" titulo="Municípios que mudaram diferente do estado" lede="Do 1º para o 2º turno, quem mais se afastou do município típico da própria UF.">

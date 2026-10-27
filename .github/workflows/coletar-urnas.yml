@@ -1,0 +1,121 @@
+name: Coletar boletins de urna
+
+# Acionado à mão (Actions > Coletar boletins de urna > Run workflow). Baixa o boletim de urna de cada seção (presidente) do TSE,
+# um job por UF (4 ao mesmo tempo, 6 requisições simultâneas em cada), e junta os agregados por município e as seções atípicas em
+# public/data/nacional/ANO-tTURNO-urnas.json. Para refazer só algumas UFs, informe-as em "ufs": elas trocam as do arquivo anterior.
+on:
+  workflow_dispatch:
+    inputs:
+      ano:
+        description: 'Ano da eleição geral'
+        required: true
+        type: string
+        default: '2026'
+      turno:
+        description: 'Turno (1 ou 2)'
+        required: true
+        type: string
+        default: '2'
+      ufs:
+        description: 'UFs separadas por espaço, como "pb pe sp" (vazio = todas, com o exterior como zz)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write   # commitar os dados gerados
+  actions: write    # disparar a publicação do site
+
+concurrency:
+  group: coletar-urnas
+  cancel-in-progress: false
+
+jobs:
+  preparar:
+    runs-on: ubuntu-latest
+    outputs:
+      ufs: ${{ steps.lista.outputs.ufs }}
+    steps:
+      - id: lista
+        env:
+          UFS: ${{ inputs.ufs }}
+        run: |
+          TODAS="ac al am ap ba ce df es go ma mg ms mt pa pb pe pi pr rj rn ro rr rs sc se sp to zz"
+          ESCOLHIDAS="${UFS,,}"; ESCOLHIDAS="${ESCOLHIDAS:-$TODAS}"
+          [[ "$ESCOLHIDAS" =~ ^[a-z]{2}( [a-z]{2})*$ ]] || { echo "UFs inválidas: $UFS"; exit 1; }
+          echo "ufs=$(echo "$ESCOLHIDAS" | tr ' ' '\n' | jq -R . | jq -sc .)" >> "$GITHUB_OUTPUT"
+
+  coletar:
+    needs: preparar
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        uf: ${{ fromJSON(needs.preparar.outputs.ufs) }}
+    env:
+      ANO: ${{ inputs.ano }}
+      TURNO: ${{ inputs.turno }}
+      UF: ${{ matrix.uf }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Coletar os boletins da UF
+        run: node scripts/gerar-urnas.mjs "$ANO" "$TURNO" "$UF" "saida/urnas-$UF.json"
+
+      # Mesmo que a UF falhe por excesso de seções sem boletim, o que foi lido é guardado para conferência.
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: urnas-${{ matrix.uf }}
+          path: saida/urnas-${{ matrix.uf }}.json
+          if-no-files-found: ignore
+          retention-days: 3
+
+  juntar:
+    needs: [preparar, coletar]
+    if: ${{ always() && needs.preparar.result == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: urnas-*
+          path: saida
+          merge-multiple: true
+
+      - name: Juntar as UFs
+        run: node scripts/juntar-urnas.mjs saida
+
+      - name: Commitar e publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/nacional
+          if git diff --cached --quiet; then echo "Nenhuma mudança nos dados."; exit 0; fi
+          git commit -m "dados: boletins de urna ${{ inputs.ano }} t${{ inputs.turno }} atualizados pelo workflow"
+          git pull --rebase
+          git push
+          gh workflow run pages.yml
