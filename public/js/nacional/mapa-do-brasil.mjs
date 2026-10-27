@@ -26,7 +26,7 @@ export function LegendaViridis({ minimo, maximo, rotulo }) {
 
 function Estado({ f, projetar, u, t, valor, selecionado, aoEscolher }) {
   const sigla = f.properties.sigla, cor = corViridis(t), c = centroDaGeometria(f.geometry, projetar);
-  const rotulo = c.largura > 24 && c.altura > 16;
+  const rotulo = c.largura > 34 && c.altura > 24;
   const escolher = () => aoEscolher(selecionado ? null : u.uf);
   return html`<g class=${'uf' + (selecionado ? ' ativa' : '')} role="button" tabindex="0" aria-pressed=${selecionado} aria-label=${`${nomeDaUf(sigla)}: ${pct(valor, 1)}`}
       onClick=${escolher} onKeyDown=${e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); escolher(); } }}>
