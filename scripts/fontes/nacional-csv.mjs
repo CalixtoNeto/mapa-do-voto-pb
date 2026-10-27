@@ -36,7 +36,10 @@ export function leitorDeVotosNacionais({ ano, acc }) {
   });
 }
 
-export function leitorDeComparecimentoNacional({ ano, acc }) {
+const COLUNAS_DE_ANULADOS = ['QT_TOTAL_VOTOS_ANULADOS', 'QT_VOTOS_NOMINAIS_ANULADOS', 'QT_TOTAL_VOTOS_ANUL_SUBJUD', 'QT_VOTOS_NOMINAIS_ANUL_SUBJUD', 'QT_VOTOS_NULOS',
+  'QT_VOTOS_NULOS_TECNICOS', 'QT_TOTAL_VOTOS_NULOS', 'QT_VOTOS_ANULADOS_APU_SEP', 'QT_VOTOS', 'QT_TOTAL_VOTOS_VALIDOS', 'QT_VOTOS_NOMINAIS_VALIDOS', 'QT_COMPARECIMENTO', 'QT_VOTOS_BRANCOS'];
+
+export function leitorDeComparecimentoNacional({ ano, acc, somas }) {
   return porRegistro({
     aoCabecalho: colunas => {
       if (process.env.NACIONAL_DEBUG) console.log(`  colunas QT_ do comparecimento ${ano}: ${Object.keys(colunas).filter(c => /^QT_/.test(c)).join(',')}`);
@@ -44,6 +47,7 @@ export function leitorDeComparecimentoNacional({ ano, acc }) {
     },
     aoRegistro: (campos, colunas) => {
       if (!ehPresidenteDoAno(campos, colunas, ano)) return;
+      if (somas) for (const nome of COLUNAS_DE_ANULADOS) if (colunas[nome] != null) somas[campos[colunas.NR_TURNO] + nome] = (somas[campos[colunas.NR_TURNO] + nome] || 0) + inteiro(campos[colunas[nome]]);
       somarComparecimentoNacional(acc, lugarDoRegistro(campos, colunas), numerosDoComparecimento(campos, colunas).slice(0, 4));
     },
   });
@@ -60,7 +64,9 @@ async function lerZip(pasta, nome, ano, leitor) {
 export async function nacionalViaCsv(ano) {
   const acc = novoAcumulador();
   const votos = await lerZip('votacao_candidato_munzona', 'munzona', ano, leitorDeVotosNacionais({ ano, acc }));
-  const comparecimento = await lerZip('detalhe_votacao_munzona', 'detalhe-munzona', ano, leitorDeComparecimentoNacional({ ano, acc }));
+  const somas = process.env.NACIONAL_DEBUG ? {} : undefined;
+  const comparecimento = await lerZip('detalhe_votacao_munzona', 'detalhe-munzona', ano, leitorDeComparecimentoNacional({ ano, acc, somas }));
+  if (somas) console.log('  somas das colunas do detalhe (presidente):', JSON.stringify(somas));
   if (!votos) console.warn(`  CSV nacional ${ano}: votação ainda não publicada`);
   if (!comparecimento) console.warn(`  CSV nacional ${ano}: comparecimento ainda não publicado`);
   return { acc, votos, comparecimento };
