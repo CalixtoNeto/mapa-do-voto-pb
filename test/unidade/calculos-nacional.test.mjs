@@ -100,3 +100,24 @@ test('sem os destacados: a vantagem nacional sem o saldo deles', () => {
   assert.equal(r.saldoDeles, 1400 - 180);
   assert.equal(r.margemSemEles, r.margemTotal - r.saldoDeles);
 });
+
+test('crescimento de votos: de cada candidato do 2º turno, do 1º ao 2º, no país e por UF (candidato achado pelo número)', async () => {
+  const { crescimentoDeVotos } = await import('../../public/js/nacional/calculos-crescimento.mjs');
+  const r = crescimentoDeVotos(nac, { anterior: '1', turno: '2' });
+  assert.deepEqual(r.candidatos.map(c => c.nr), ['13', '22']);
+  // 13: 1º turno 400+800+200 = 1400 (M4 não tem 2º turno e fica de fora), 2º turno 500+950+100 = 1550
+  assert.deepEqual(r.brasil.map(b => [b.antes, b.depois]), [[1400, 1550], [1050, 1210]]);
+  assert.ok(Math.abs(r.brasil[0].crescimento - (1550 / 1400 - 1)) < 1e-12);
+  const bb = r.ufs.find(u => u.uf === 'BB');
+  assert.deepEqual(bb.itens.map(i => [i.antes, i.depois]), [[200, 100], [150, 190]]);
+  assert.ok(bb.itens[0].crescimento < 0, 'perda de votos fica negativa');
+});
+
+test('crescimento de votos: candidato do 2º turno que não disputou o 1º, ou com zero votos antes, fica sem percentual', async () => {
+  const { crescimentoDeVotos } = await import('../../public/js/nacional/calculos-crescimento.mjs');
+  const novo = { turnos: { 1: { cands: [{ nr: '13' }] }, 2: { cands: [{ nr: '13' }, { nr: '99' }] } }, municipios: [['1', 'AA', 'M', { 1: [100, 80, 0, 0, 0], 2: [100, 80, 0, 0, 50, 30] }]] };
+  const r = crescimentoDeVotos(novo, { anterior: '1', turno: '2' });
+  assert.equal(r.brasil[0].crescimento, null, 'zero votos antes');
+  assert.equal(r.brasil[1].antes, null);
+  assert.equal(r.brasil[1].crescimento, null);
+});
