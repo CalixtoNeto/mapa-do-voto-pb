@@ -9,15 +9,21 @@ import { CARGOS } from '../eleicao/config.mjs';
 
 const PEDIDOS_SIMULTANEOS = 8;
 
-// Os totais de comparecimento (aptos, comparecimento, brancos, nulos) ficam ao lado dos candidatos; sem eles, só os votos.
+const primeiro = (objetos, chaves) => objetos.flatMap(o => chaves.map(chave => o?.[chave])).find(v => v != null);
+
+// Os totais de comparecimento (aptos, comparecimento, brancos, nulos) podem vir em carg[0] ou nos blocos e (eleitorado) e v (votos) da raiz.
 export function lerResultadoDoMunicipio(arquivo) {
   const cargo = arquivo?.carg?.[0];
   if (!cargo) return null;
   const candidatos = (cargo.agr || []).flatMap(a => (a.par || []).flatMap(p => (p.cand || []).map(c =>
     ({ nr: c.n, urna: c.nmu, partido: p.sg || '', sit: c.st || '', votos: inteiro(c.vap) }))));
-  const temTotais = ['ea', 'c', 'vb', 'vn'].every(chave => cargo[chave] != null);
-  return { candidatos, comparecimento: temTotais ? [cargo.ea, cargo.c, cargo.vb, cargo.vn].map(inteiro) : null };
+  const lugares = [cargo, arquivo.e, arquivo.v, arquivo];
+  const totais = [['te', 'ea'], ['c'], ['vb'], ['vn']].map(chaves => primeiro(lugares, chaves));
+  return { candidatos, comparecimento: totais.every(v => v != null) ? totais.map(inteiro) : null };
 }
+
+// Em 2022 e 2026 o presidente está numa eleição à parte da estadual: é a que lista o cargo 1.
+export const eleicaoDoPresidente = eleicoes => eleicoes.find(e => e.abr?.some(a => a.cp?.some(c => c.cd === CARGOS.PRESIDENTE)));
 
 const urlDoMunicipio = (ano, codigo, uf, municipio) =>
   `${API}/ele${ano}/${codigo}/dados/${uf}/${uf}${pad(municipio, 5)}-c${pad(CARGOS.PRESIDENTE, 4)}-e${pad(codigo, 6)}-u.json`;
@@ -33,8 +39,9 @@ function somarMunicipio(acc, lugar, lido) {
 }
 
 async function somarTurno(acc, { ano, turno, codigo, municipios, buscarJson }) {
-  const existe = await buscarJson(urlDoMunicipio(ano, codigo, municipios[0].uf, municipios[0].cd));
-  if (!existe) return false;
+  const primeiro = urlDoMunicipio(ano, codigo, municipios[0].uf, municipios[0].cd), existe = await buscarJson(primeiro);
+  if (!existe) { console.log(`  API nacional ${ano} t${turno}: ainda sem resultado em ${primeiro}`); return false; }
+  if (!lerResultadoDoMunicipio(existe)?.comparecimento) console.log(`  API nacional ${ano} t${turno}: sem totais de comparecimento; raiz: ${Object.keys(existe).join(',')} | e: ${Object.keys(existe.e || {}).join(',')} | v: ${Object.keys(existe.v || {}).join(',')} | carg[0]: ${Object.keys(existe.carg?.[0] || {}).join(',')}`);
   await paralelo(municipios, PEDIDOS_SIMULTANEOS, async m => {
     const lido = lerResultadoDoMunicipio(await buscarJson(urlDoMunicipio(ano, codigo, m.uf, m.cd)));
     if (lido) somarMunicipio(acc, { turno, uf: m.uf.toUpperCase(), cd: m.cd, nome: m.nome }, lido);
@@ -45,9 +52,10 @@ async function somarTurno(acc, { ano, turno, codigo, municipios, buscarJson }) {
 
 // Soma em `acc` os turnos que `faltando(turno)` pedir. Devolve quantos turnos foram adicionados.
 export async function completarNacionalViaApi(ano, acc, faltando, buscarJson = getJson) {
-  const eleicao = (await eleicoesDoAno(ano, buscarJson)).find(e => e.tp === '1');
-  if (!eleicao) return 0;
+  const eleicao = eleicaoDoPresidente(await eleicoesDoAno(ano, buscarJson));
+  if (!eleicao) { console.log(`  API nacional ${ano}: eleição não encontrada na configuração`); return 0; }
   const municipios = await municipiosDoPais(ano, eleicao, buscarJson);
+  console.log(`  API nacional ${ano}: eleição ${eleicao.cd} (2º turno ${eleicao.cdt2 || 'sem código'}), ${municipios.length} municípios na configuração`);
   if (!municipios.length) return 0;
   let adicionados = 0;
   for (const [turno, codigo] of [['1', eleicao.cd], ['2', eleicao.cdt2]]) {

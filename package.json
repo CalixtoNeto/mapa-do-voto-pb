@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "malha": "node scripts/gerar-malha.mjs",
+    "malha-brasil": "node scripts/gerar-malha-brasil.mjs",
     "tabela": "node scripts/gerar-tabela-tse.mjs",
     "dados": "npm run malha && npm run tabela",
     "eleicoes": "node scripts/gerar-dados.mjs",

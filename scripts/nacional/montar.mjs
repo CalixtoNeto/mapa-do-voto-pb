@@ -12,9 +12,15 @@ function linhaDoMunicipio(m, turno, cands) {
   return t ? [...t.comparecimento, ...cands.map(c => t.votos.get(c.nr) || 0)] : null;
 }
 
+// Quinto item do município, só quando existe: { turno: votos anulados }.
+function anuladosDoMunicipio(m) {
+  const com = Object.entries(m.turnos).filter(([, t]) => t.anulados > 0).map(([turno, t]) => [turno, t.anulados]);
+  return com.length ? [Object.fromEntries(com)] : [];
+}
+
 export function montarNacional(acc, { ano, fonte, atualizadoEm, tse }) {
   const turnos = Object.fromEntries(turnosDoAcumulador(acc).map(t => [t, { cands: candidatosDoTurno(acc, t) }]));
   const municipios = [...acc.municipios].sort((a, b) => a[1].uf.localeCompare(b[1].uf) || a[1].nome.localeCompare(b[1].nome, 'pt-BR')).map(([cd, m]) =>
-    [cd, m.uf, m.nome, Object.fromEntries(Object.keys(turnos).map(t => [t, linhaDoMunicipio(m, t, turnos[t].cands)]).filter(([, linha]) => linha))]);
+    [cd, m.uf, m.nome, Object.fromEntries(Object.keys(turnos).map(t => [t, linhaDoMunicipio(m, t, turnos[t].cands)]).filter(([, linha]) => linha)), ...anuladosDoMunicipio(m)]);
   return { ano, fonte, atualizadoEm, ...(tse && { tse }), turnos, municipios };
 }

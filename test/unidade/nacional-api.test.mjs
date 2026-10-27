@@ -2,7 +2,7 @@
 // O formato dos arquivos é o mesmo que scripts/fontes/api-resultados.mjs já lê; os totais de comparecimento ficam em carg[0].
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { lerResultadoDoMunicipio, completarNacionalViaApi } from '../../scripts/fontes/nacional-api.mjs';
+import { lerResultadoDoMunicipio, completarNacionalViaApi, eleicaoDoPresidente } from '../../scripts/fontes/nacional-api.mjs';
 import { novoAcumulador } from '../../scripts/nacional/acumulador.mjs';
 
 const resultado = (extra = {}) => ({ carg: [{ nmn: 'Presidente', ea: '1200', c: '1000', vb: '40', vn: '60',
@@ -56,9 +56,21 @@ test('totais nacionais do TSE: lê o bloco que tiver os números, em qualquer um
   assert.deepEqual(numerosDoTse({ carg: [bloco] }), numerosDoTse(bloco));
   assert.equal(numerosDoTse({ abr: [{ vv: '5' }] }), null);
   assert.equal(numerosDoTse(null), null);
-  const config = { pl: [{ c: 'ele2026', e: [{ cd: '544', tp: '1', cdt2: '545' }] }] };
+  const config = { pl: [{ c: 'ele2026', e: [{ cd: '544', tp: '1', cdt2: '545', abr: [{ cp: [{ cd: '1' }] }] }] }] };
   const buscar = async url => url.endsWith('ele-c.json') ? config : url.includes('/ele2026/545/dados-simplificados/br/br-c0001-e000545-r.json') ? { abr: [bloco] } : null;
   const totais = await totaisNacionaisDoTse('2026', buscar);
   assert.deepEqual(Object.keys(totais), ['2']);
   assert.equal(totais['2'].validos, 770);
+});
+
+test('lê o comparecimento também dos blocos e (eleitorado) e v (votos) da raiz do arquivo', () => {
+  const arquivo = { e: { te: '1200', c: '1000' }, v: { vb: '40', vn: '60' }, carg: [{ agr: [] }] };
+  assert.deepEqual(lerResultadoDoMunicipio(arquivo).comparecimento, [1200, 1000, 40, 60]);
+});
+
+test('a eleição do presidente é a que lista o cargo 1, não a estadual do mesmo ano', () => {
+  const estadual = { cd: '6259', tp: '1', cdt2: '6260', abr: [{ cp: [{ cd: '3' }, { cd: '5' }] }] };
+  const federal = { cd: '6258', tp: '2', cdt2: '6261', abr: [{ cp: [{ cd: '1' }] }] };
+  assert.equal(eleicaoDoPresidente([estadual, federal]).cd, '6258');
+  assert.equal(eleicaoDoPresidente([estadual]), undefined);
 });

@@ -99,6 +99,16 @@ Em **Perfil do estado** (ou direto em `#perfis`), o Governo da Paraíba em cada 
 
 Para gerar ou atualizar: **Actions → Atualizar perfis → Run workflow** (roda sozinho todo dia 10). Localmente: `node scripts/gerar-perfis.mjs 2025` (cerca de 1 minuto por ano do governo; a Assembleia leva cerca de meia hora, `--sem-assembleia` pula e `--so-assembleia` faz só ela).
 
+## Cenário nacional
+
+A aba **Cenário nacional** mostra o presidente em todo o país (2014, 2018, 2022 e 2026), com foco no que dá para conferir nos arquivos abertos do TSE:
+
+- **Mapa do Brasil por estado**, desenhado com a malha de UFs do IBGE. A cor segue a escala viridis (do roxo ao amarelo) e mostra a parcela do candidato escolhido nos votos válidos; não usa cor de partido nem de vitória ou derrota.
+- **Auditoria: as contas fecham?** Em cada município e zona do exterior, válidos + anulados + brancos + nulos devem dar o comparecimento, e ninguém comparece mais que o eleitorado apto. Os nulos incluem os nulos técnicos. Quando o TSE publica o total nacional, a soma dos municípios é conferida com ele.
+- **Municípios que mudaram diferente do estado**: do 1º para o 2º turno, quem mais se afastou do município típico da própria UF (4 desvios ou mais e pelo menos 5 p.p. de diferença) no voto, na abstenção ou nos brancos e nulos, e quanto esses municípios pesam na vantagem nacional. É uma comparação estatística, não uma avaliação de legalidade: município pequeno varia mais.
+
+Os dados vêm do arquivo nacional (`_BRASIL.csv`) de `votacao_candidato_munzona` e `detalhe_votacao_munzona` dos Dados Abertos do TSE; o turno que o CSV ainda não publicou (por exemplo, um 2º turno recém-apurado) vem da API de resultados. Para gerar ou atualizar: **Actions → Atualizar o cenário nacional → Run workflow** com os anos (por exemplo, `2026`); o workflow também baixa a malha das UFs do IBGE na primeira vez. Localmente: `npm run nacional -- 2026 --forcar` e `npm run malha-brasil`. Não entram os dados de boletim de urna (biometria, horário de abertura), que não estão nos arquivos agregados.
+
 ## De onde vêm os dados
 
 Os resultados ficam no repositório, em `public/data/eleicoes/`: um `ANO-tTURNO.json` por eleição e turno, o `ANO-tTURNO-locais.json` com os votos por escola (carregado só ao clicar num município) um `index.json` que o site lê para listar as eleições e um `pessoas.json` que liga o mesmo candidato entre eleições (pelo nome completo). O site é totalmente estático: o navegador do visitante nunca chama o TSE.

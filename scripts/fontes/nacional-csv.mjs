@@ -29,7 +29,8 @@ export function leitorDeVotosNacionais({ ano, acc }) {
       if (!ehPresidenteDoAno(campos, colunas, ano)) return;
       const sit = colunas.DS_SIT_TOT_TURNO != null ? campos[colunas.DS_SIT_TOT_TURNO] : '';
       const candidato = { nr: campos[colunas.NR_CANDIDATO], urna: campos[colunas.NM_URNA_CANDIDATO], partido: campos[colunas.SG_PARTIDO], sit };
-      somarVotoNacional(acc, lugarDoRegistro(campos, colunas), candidato, inteiro(campos[colunas[colunaDeVotos]]));
+      const validos = inteiro(campos[colunas[colunaDeVotos]]), nominais = colunas.QT_VOTOS_NOMINAIS_VALIDOS != null && colunas.QT_VOTOS_NOMINAIS != null ? inteiro(campos[colunas.QT_VOTOS_NOMINAIS]) : validos;
+      somarVotoNacional(acc, lugarDoRegistro(campos, colunas), candidato, validos, Math.max(0, nominais - validos));
     },
   });
 }
@@ -39,7 +40,10 @@ export function leitorDeComparecimentoNacional({ ano, acc }) {
     aoCabecalho: colunas => { exigir(colunas, COLUNAS_DE_LUGAR, ano); exigirColunasDoComparecimento(colunas, ano); },
     aoRegistro: (campos, colunas) => {
       if (!ehPresidenteDoAno(campos, colunas, ano)) return;
-      somarComparecimentoNacional(acc, lugarDoRegistro(campos, colunas), numerosDoComparecimento(campos, colunas).slice(0, 4));
+      const numeros = numerosDoComparecimento(campos, colunas).slice(0, 4);
+      // QT_VOTOS_NULOS deixa de fora os nulos técnicos; o total é o que fecha com o comparecimento.
+      if (colunas.QT_TOTAL_VOTOS_NULOS != null) numeros[3] = inteiro(campos[colunas.QT_TOTAL_VOTOS_NULOS]);
+      somarComparecimentoNacional(acc, lugarDoRegistro(campos, colunas), numeros);
     },
   });
 }

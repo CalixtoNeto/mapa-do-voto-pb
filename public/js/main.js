@@ -2,12 +2,13 @@
 // É um módulo para importar as análises; app.js continua um script comum, carregado antes.
 import * as analises from './analises.mjs';
 import * as perfis from './perfil/pagina-perfis.mjs';
+import * as nacional from './nacional/pagina-nacional.mjs';
 
 const root = document.getElementById('root');
 try {
   const topo = await fetch('data/pb.topo.json').then(r => { if (!r.ok) throw new Error('malha'); return r.json(); });
   root.textContent = '';
-  startApp(topo, analises, perfis);
+  startApp(topo, analises, perfis, nacional);
 } catch (e) {
   root.innerHTML = '<p style="padding:24px;font-family:system-ui">Não foi possível carregar o mapa. Recarregue a página.</p>';
   console.error(e);
