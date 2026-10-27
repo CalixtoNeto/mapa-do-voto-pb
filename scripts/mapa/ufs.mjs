@@ -12,3 +12,10 @@ export function ufsDoGeojson(geo) {
   if (features.length !== total) throw new Error(`Esperava ${total} UFs na malha do IBGE, vieram ${features.length}`);
   return { ...geo, features };
 }
+
+// Para a malha por município: marca todos os municípios do arquivo de uma UF com o código e a sigla dela.
+export function marcarUf(geo, codigo) {
+  const sigla = SIGLAS_POR_CODIGO[codigo];
+  if (!sigla) throw new Error(`Código de UF desconhecido: ${codigo}`);
+  return { ...geo, features: geo.features.map(f => ({ ...f, properties: { codigo, sigla } })) };
+}

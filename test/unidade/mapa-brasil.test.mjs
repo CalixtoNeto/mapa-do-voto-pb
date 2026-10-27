@@ -63,3 +63,10 @@ test('texto sobre a cor: claro nas escuras, escuro nas claras', () => {
   assert.equal(textoSobre(corViridis(0)), '#ffffff');
   assert.equal(textoSobre(corViridis(1)), '#15212c');
 });
+
+test('malha por município: cada feature do estado recebe código e sigla da UF, para depois juntar os municípios', async () => {
+  const { marcarUf } = await import('../../scripts/mapa/ufs.mjs');
+  const geo = { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { id: '2507507', name: 'João Pessoa' }, geometry: null }] };
+  assert.deepEqual(marcarUf(geo, '25').features[0].properties, { codigo: '25', sigla: 'PB' });
+  assert.throws(() => marcarUf(geo, '99'), /UF/);
+});
